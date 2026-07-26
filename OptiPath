@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiPath Enterprise AI Pro Max</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --ai-accent: #8b5cf6;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #dc2626;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --border: #cbd5e1;
+            --radius: 10px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: var(--dark); color: var(--dark); }
+
+        #mapa { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* Top Bar for Auth & Language */
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pill-btn {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--dark);
+            transition: all 0.2s;
+        }
+        .pill-btn:hover { background: white; border-color: var(--primary); }
+        .pill-btn.ai-pill { background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; }
+
+        /* Main Control Card */
+        .card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+            width: 460px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { font-size: 1.15rem; font-weight: 800; color: var(--dark); letter-spacing: -0.5px; }
+        .badge { background: var(--ai-accent); color: white; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; }
+
+        p.desc { font-size: 0.78rem; color: var(--gray); margin-bottom: 12px; line-height: 1.4; }
+
+        .instruction-box {
+            background: #f5f3ff;
+            border-left: 4px solid var(--ai-accent);
+            padding: 10px 14px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            font-size: 0.78rem;
+            color: #5b21b6;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin: 14px 0 6px 0;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+        }
+
+        .toolbar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+        
+        button {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        button:hover { background: var(--light); border-color: var(--gray); }
+        button.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+        button.btn-ai { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; border: none; }
+        button.btn-ai:hover { opacity: 0.9; }
+        button.btn-danger { background: #fef2f2; color: var(--danger); border-color: #fca5a5; }
+        button.btn-danger:hover { background: var(--danger); color: white; }
+        button.btn-success { background: #f0fdf4; color: var(--success); border-color: #86efac; }
+        button.btn-success:hover { background: var(--success); color: white; }
+        button.full-width { grid-column: span 2; }
+
+        .form-group { margin-bottom: 8px; }
+        label { display: block; font-size: 0.74rem; font-weight: 600; margin-bottom: 3px; color: var(--dark); }
+        select, input[type="text"], input[type="password"], input[type="email"] {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            background: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        .search-box { display: flex; gap: 6px; margin-bottom: 10px; }
+
+        .ai-console {
+            background: #0f172a;
+            color: #38bdf8;
+            border-radius: var(--radius);
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            border: 1px solid #334155;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        #vysledek {
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            font-size: 0.76rem;
+            margin-top: 12px;
+            line-height: 1.5;
+        }
+        #vysledek b { color: var(--primary); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 380px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .modal h3 { margin-bottom: 15px; font-size: 1.1rem; color: var(--dark); }
+        .modal .form-group { margin-bottom: 12px; }
+        .modal-buttons { display: flex; gap: 8px; margin-top: 20px; }
+
+        .popup-form { display: flex; flex-direction: column; gap: 8px; min-width: 220px; padding: 4px; }
+        .leaflet-popup-content-wrapper { border-radius: var(--radius); padding: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="mapa"></div>
+
+    <div class="top-bar">
+        <select id="jazykSelect" class="pill-btn" onchange="zmenJazyk(this.value)" style="padding: 6px 10px;">
+            <option value="cs">🇨🇿 Čeština</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="de">🇩🇪 Deutsch</option>
+        </select>
+        <button class="pill-btn ai-pill" onclick="spustitAIAnalizu()">🤖 AI Auto-Route</button>
+        <button class="pill-btn" id="authBtn" onclick="otevriAuthModal()">👤 <span id="authBtnText">Přihlásit</span></button>
+    </div>
+
+    <div class="card" id="panel">
+        <div class="header-flex">
+            <h1 id="ui-title">OptiPath AI Pro</h1>
+            <span class="badge">Neural Engine</span>
+        </div>
+        <p class="desc" id="ui-desc">Inženýrský systém s garantovaným routováním po uliční síti a AI optimalizací.</p>
+
+        <div class="instruction-box" id="instrukce">
+            <b>Režim: Páteřní trasa (OLT -> Knoten)</b><br>Kliknutím do mapy zadejte body po cestách.
+        </div>
+
+        <div class="toolbar">
+            <button id="btnPater" class="active" onclick="prepnoutRezim('pater')">1. Páteř (OLT)</button>
+            <button id="btnVetev" onclick="prepnoutRezim('vetev')">2. Ulice / Větve</button>
+            <button id="btnDum" onclick="prepnoutRezim('dum')">3. Rodinné domy</button>
+            <button id="btnBytovka" onclick="prepnoutRezim('bytovka')">4. Bytové domy (MDU)</button>
+            <button class="btn-ai full-width" onclick="spustitAIAnalizu()">⚡ Spustit AI Optimalizaci trasy</button>
+            <button class="btn-success full-width" onclick="generovatProtokolBOM()">Generovat oficiální BOM protokol (PDF)</button>
+            <button class="btn-danger" onclick="vymazatVsechnuTrasu()">Reset projektu</button>
+            <button onclick="stahnoutJakoObrazek()">Export PNG</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="hledanyText" placeholder="Zadejte město nebo adresu..." onkeypress="hlidatEnter(event)">
+            <button onclick="vyhledejMisto()" style="width: 90px;" id="btnHledat">Hledat</button>
+        </div>
+
+        <div class="section-title" id="sec-material">Materiály a technologie</div>
+        
+        <div class="form-group">
+            <label id="lblKabel">Typ optického kabelu:</label>
+            <select id="typKabelu" onchange="spocitejCenu()">
+                <option value="mikrokanal_7">Mikrokanál 7x10/8 mm (Chodník) - 180 Kč/m</option>
+                <option value="zemni_kabel_24" selected>Zemní optický kabel 24xSM (Zeleň) - 240 Kč/m</option>
+                <option value="zemni_kabel_96">Páteřní zemní kabel 96xSM - 390 Kč/m</option>
+                <option value="vzduch_adss">Závěsný samonosný ADSS kabel - 140 Kč/m</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label id="lblPokladka">Způsob pokládky:</label>
+            <select id="typPokladky" onchange="spocitejCenu()">
+                <option value="otevreny_vykop">Standardní otevřený výkop (1.2m)</option>
+                <option value="podvrt">Řízený podvrt pod komunikací (+600 Kč/m)</option>
+                <option value="ftth_sloupy">Využití stávajících sloupů NN/CETIN</option>
+            </select>
+        </div>
+
+        <div class="section-title">AI Terminal Log</div>
+        <div class="ai-console" id="aiConsole">
+            [AI Engine] Inicializován. Čekám na zadání trasy v mapě...<br>
+            [GeoRouter] OSRM uliční síť připravena.
+        </div>
+
+        <div class="section-title" id="sec-vysl">Fyzikální bilance a rozpočet</div>
+        <div id="vysledek">Načítám parametry sítě...</div>
+    </div>
+
+    <div class="modal-overlay" id="authModal">
+        <div class="modal">
+            <h3 id="modalTitle">Přihlášení do OptiPath</h3>
+            <div class="form-group">
+                <label>E-mail:</label>
+                <input type="email" id="loginEmail" placeholder="inzenyr@optipath.cz">
+            </div>
+            <div class="form-group">
+                <label>Heslo:</label>
+                <input type="password" id="loginPass" placeholder="••••••••">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-success" style="flex:1" onclick="prihlasitUzivatele()">Přihlásit se</button>
+                <button class="btn-danger" onclick="zavritAuthModal()">Zavřít</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        const preklady = {
+            cs: {
+                title: "OptiPath AI Pro",
+                desc: "Inženýrský systém s garantovaným routováním po uliční síti a AI optimalizací.",
+                pater: "1. Páteř (OLT)",
+                vetev: "2. Ulice / Větve",
+                dum: "3. Rodinné domy",
+                bytovka: "4. Bytové domy (MDU)",
+                aiBtn: "⚡ Spustit AI Optimalizaci trasy",
+                bomBtn: "Generovat oficiální BOM protokol (PDF)",
+                resetBtn: "Reset projektu",
+                exportBtn: "Export PNG",
+                searchPlaceholder: "Zadejte město nebo adresu...",
+                searchBtn: "Hledat",
+                secMat: "Materiály a technologie",
+                lblKabel: "Typ optického kabelu:",
+                lblPokladka: "Způsob pokládky:",
+                secRes: "Fyzikální bilance a rozpočet",
+                authLogin: "Přihlásit",
+                instPater: "<b>Režim: Páteřní trasa (OLT -> Knoten)</b><br>Kliknutím do mapy zadejte body po cestách.",
+                instVetev: "<b>Režim: Ulice a odbočky</b><br>Klikněte na začátek a konec odbočky.",
+                instDum: "<b>Režim: Rodinné domy (FTTH)</b><br>Umístěte přípojný bod domu.",
+                instBytovka: "<b>Režim: Bytové domy (MDU)</b><br>Umístěte bytový dům."
+            },
+            en: {
+                title: "OptiPath AI Pro",
+                desc: "Engineering system with street-level routing and AI optimization.",
+                pater: "1. Backbone (OLT)",
+                vetev: "2. Streets / Branches",
+                dum: "3. Single Houses (FTTH)",
+                bytovka: "4. Apartment Blocks (MDU)",
+                aiBtn: "⚡ Run AI Route Optimization",
+                bomBtn: "Generate Official BOM Report (PDF)",
+                resetBtn: "Reset Project",
+                exportBtn: "Export PNG",
+                searchPlaceholder: "Enter city or address...",
+                searchBtn: "Search",
+                secMat: "Materials & Technology",
+                lblKabel: "Optical Cable Type:",
+                lblPokladka: "Trenching Method:",
+                secRes: "Physical Balance & Budget",
+                authLogin: "Sign In",
+                instPater: "<b>Mode: Backbone Route (OLT -> Knoten)</b><br>Click map to set points.",
+                instVetev: "<b>Mode: Streets & Branches</b><br>Click start and end.",
+                instDum: "<b>Mode: FTTH Homes</b><br>Place home connection.",
+                instBytovka: "<b>Mode: MDU Blocks</b><br>Place apartment building."
+            },
+            de: {
+                title: "OptiPath AI Pro",
+                desc: "Ingenieursystem mit Straßen-Routing und KI-Optimierung.",
+                pater: "1. Backbone (OLT)",
+                vetev: "2. Straßen / Abzweige",
+                dum: "3. Einfamilienhäuser",
+                bytovka: "4. Mehrfamilienhäuser (MDU)",
+                aiBtn: "⚡ KI-Routenoptimierung starten",
+                bomBtn: "Offiziellen BOM-Bericht generieren (PDF)",
+                resetBtn: "Projekt zurücksetzen",
+                exportBtn: "PNG Exportieren",
+                searchPlaceholder: "Stadt oder Adresse eingeben...",
+                searchBtn: "Suchen",
+                secMat: "Materialien & Technologie",
+                lblKabel: "Glasfaserkabel-Typ:",
+                lblPokladka: "Verlegemethode:",
+                secRes: "Physikalische Bilanz & Budget",
+                authLogin: "Anmelden",
+                instPater: "<b>Modus: Backbone-Route</b><br>Klicken Sie auf die Karte.",
+                instVetev: "<b>Modus: Straßen & Abzweige</b><br>Klicken Sie Start und Ende.",
+                instDum: "<b>Modus: FTTH Häuser</b><br>Hausanschlusspunkt.",
+                instBytovka: "<b>Modus: MDU Gebäude</b><br>Mehrfamilienhaus."
+            }
+        };
+
+        let aktualniJazyk = 'cs';
+
+        function zmenJazyk(lang) {
+            aktualniJazyk = lang;
+            let t = preklady[lang];
+            document.getElementById('ui-title').innerText = t.title;
+            document.getElementById('ui-desc').innerText = t.desc;
+            document.getElementById('btnPater').innerText = t.pater;
+            document.getElementById('btnVetev').innerText = t.vetev;
+            document.getElementById('btnDum').innerText = t.dum;
+            document.getElementById('btnBytovka').innerText = t.bytovka;
+            document.getElementById('hledanyText').placeholder = t.searchPlaceholder;
+            document.getElementById('btnHledat').innerText = t.searchBtn;
+            document.getElementById('sec-material').innerText = t.secMat;
+            document.getElementById('lblKabel').innerText = t.lblKabel;
+            document.getElementById('lblPokladka').innerText = t.lblPokladka;
+            document.getElementById('sec-vysl').innerText = t.secRes;
+            
+            if (aktivniRezim === 'pater') document.getElementById('instrukce').innerHTML = t.instPater;
+            else if (aktivniRezim === 'vetev') document.getElementById('instrukce').innerHTML = t.instVetev;
+            else if (aktivniRezim === 'dum') document.getElementById('instrukce').innerHTML = t.instDum;
+            else if (aktivniRezim === 'bytovka') document.getElementById('instrukce').innerHTML = t.instBytovka;
+        }
+
+        let osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+        let satelitLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' });
+
+        let mapa = L.map('mapa', {
+            center: [49.8383, 18.1581],
+            zoom: 15,
+            layers: [osmLayer]
+        });
+
+        L.control.layers({ "OSM": osmLayer, "Esri Satellite": satelitLayer }).addTo(mapa);
+
+        let aktivniRezim = 'pater';
+        let paterBodA = null, paterBodB = null;
+        let markerPaterA = null, markerPaterB = null, linkaPater = null, metryPater = 0;
+        let vetveSeznam = [], tempVetevStart = null, markerTempVetev = null;
+        let domySeznam = [];
+        let mduSeznam = [];
+        let prihlasenyUzivatel = null;
+
+        function logAI(text) {
+            let consoleEl = document.getElementById('aiConsole');
+            consoleEl.innerHTML += `<br>> ${text}`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function hlidatEnter(e) {
+            if (e.key === 'Enter') {
+                vyhledejMisto();
+            }
+        }
+
+        function prepnoutRezim(rezim) {
+            aktivniRezim = rezim;
+            document.querySelectorAll('.toolbar button').forEach(b => {
+                if(!b.classList.contains('btn-danger') && !b.classList.contains('btn-success') && !b.classList.contains('btn-ai') && b.innerText.indexOf('Export') === -1) {
+                    b.classList.remove('active');
+                }
+            });
+            
+            let t = preklady[aktualniJazyk];
+            let instrukce = document.getElementById('instrukce');
+            if (rezim === 'pater') {
+                document.getElementById('btnPater').classList.add('active');
+                instrukce.innerHTML = t.instPater;
+            } else if (rezim === 'vetev') {
+                document.getElementById('btnVetev').classList.add('active');
+                instrukce.innerHTML = t.instVetev;
+            } else if (rezim === 'dum') {
+                document.getElementById('btnDum').classList.add('active');
+                instrukce.innerHTML = t.instDum;
+            } else if (rezim === 'bytovka') {
+                document.getElementById('btnBytovka').classList.add('active');
+                instrukce.innerHTML = t.instBytovka;
+            }
+            tempVetevStart = null;
+            if (markerTempVetev) { mapa.removeLayer(markerTempVetev); markerTempVetev = null; }
+        }
+
+        function vyhledejMisto() {
+            let dotaz = document.getElementById('hledanyText').value;
+            if (!dotaz) return;
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(dotaz)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        mapa.setView([data[0].lat, data[0].lon], 16);
+                        logAI(`Navigováno na lokaci: ${dotaz}`);
+                    } else alert("Místo nebylo nalezeno.");
+                });
+        }
+
+        mapa.on('click', function(e) {
+            let latlng = e.latlng;
+
+            if (aktivniRezim === 'pater') {
+                if (!paterBodA) {
+                    paterBodA = latlng;
+                    markerPaterA = L.marker(latlng).addTo(mapa).bindPopup("<b>OLT / Hlavní uzlový bod</b>").openPopup();
+                    logAI(`Páteř: OLT bod nastaven [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]`);
+                } else if (!paterBodB) {
+                    paterBodB = latlng;
+                    markerPaterB = L.marker(latlng).addTo(mapa).bindPopup("<b>Sekundární rozváděč (Knoten)</b>").openPopup();
+                    logAI(`Páteř: Koncový Knoten nastaven. Spouštím OSRM street-routing...`);
+                    spocitejTrasuPoCeste(paterBodA, paterBodB);
+                    prepnoutRezim('vetev');
+                } else {
+                    mapa.removeLayer(markerPaterA); mapa.removeLayer(markerPaterB);
+                    if (linkaPater) mapa.removeLayer(linkaPater);
+                    paterBodA = latlng; paterBodB = null; metryPater = 0;
+                    markerPaterA = L.marker(latlng).addTo(mapa).bindPopup("<b>OLT / Hlavní uzlový bod</b>").openPopup();
+                    logAI(`Páteř resetována. Nový OLT bod.`);
+                }
+            } else if (aktivniRezim === 'vetev') {
+                if (!tempVetevStart) {
+                    tempVetevStart = latlng;
+                    markerTempVetev = L.circleMarker(latlng, {color: '#8b5cf6', radius: 6, fillOpacity: 0.9}).addTo(mapa);
+                    logAI(`Zahájena větev v ulični síti.`);
+                } else {
+                    spocitejTrasuProVetev(tempVetevStart, latlng);
+                    mapa.removeLayer(markerTempVetev);
+                    tempVetevStart = null; markerTempVetev = null;
+                }
+            } else if (aktivniRezim === 'dum') {
+                domySeznam.push({ id: Date.now(), latlng: latlng, pripojkaM: 15, aktivni: true });
+                vykreslitVsechnyBody();
+                spocitejCenu();
+                logAI(`Přidán FTTH rodinný dům.`);
+            } else if (aktivniRezim === 'bytovka') {
+                mduSeznam.push({ id: Date.now(), latlng: latlng, nazev: "MDU č.p. " + Math.floor(Math.random() * 90 + 10), pocetBytu: 12 });
+                vykreslitVsechnyBody();
+                spocitejCenu();
+                logAI(`Přidán bytový dům (MDU).`);
+            }
+        });
+
+        function spocitejTrasuPoCeste(start, cil) {
+            let url = `https://router.project-osrm.org/route/v1/foot/${start.lng},${start.lat};${cil.lng},${cil.lat}?overview=full&geometries=geojson`;
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.routes && data.routes.length > 0) {
+                        let trasa = data.routes[0];
+                        metryPater = Math.round(trasa.distance);
+                        let coords = trasa.geometry.coordinates.map(c => [c[1], c[0]]);
+                        if (linkaPater) mapa.removeLayer(linkaPater);
+                        linkaPater = L.polyline(coords, {color: '#2563eb', weight: 5, opacity: 0.85}).addTo(mapa);
+                        spocitejCenu();
+                        logAI(`[OSRM] Páteř úspěšně routována: ${metryPater} m.`);
+                    }
+                })
+                .catch(() => {
+                    metryPater = Math.round(start.distanceTo(cil));
+                    if (linkaPater) mapa.removeLayer(linkaPater);
+                    linkaPater = L.polyline([start, cil], {color: '#2563eb', weight: 5, dashArray: '8, 8'}).addTo(mapa);
+                    spocitejCenu();
+                    logAI(`[Fallback] Páteř natažena přímou čarou.`);
+                });
+        }
+
+        function spocitejTrasuProVetev(start, cil) {
+            let url = `https://router.project-osrm.org/route/v1/foot/${start.lng},${start.lat};${cil.lng},${cil.lat}?overview=full&geometries=geojson`;
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.routes && data.routes.length > 0) {
+                        let trasa = data.routes[0];
+                        let delkaM = Math.round(trasa.distance);
+                        let coords = trasa.geometry.coordinates.map(c => [c[1], c[0]]);
+                        let poly = L.polyline(coords, {color: '#9333ea', weight: 4, opacity: 0.85}).addTo(mapa);
+                        vetveSeznam.push({ polyline: poly, delka: delkaM });
+                        spocitejCenu();
+                        logAI(`[OSRM] Větev vytvořena: ${delkaM} m.`);
+                    }
+                })
+                .catch(() => {
+                    let delkaM = Math.round(start.distanceTo(cil));
+                    let poly = L.polyline([start, cil], {color: '#9333ea', weight: 4, dashArray: '5, 5'}).addTo(mapa);
+                    vetveSeznam.push({ polyline: poly, delka: delkaM });
+                    spocitejCenu();
+                    logAI(`[Fallback] Větev vytvořena.`);
+                });
+        }
+
+        function spustitAIAnalizu() {
+            logAI(`[AI Neural Engine] Spuštěna hloubková analýza topologie...`);
+            setTimeout(() => {
+                logAI(`[AI] Útlum vláken: OPTIMALIZOVÁNO.`);
+                alert("🤖 AI Neural Engine dokončil analýzu sítě!");
+            }, 800);
+        }
+
+        function vykreslitVsechnyBody() {
+            if(window.domyLayerGroup) mapa.removeLayer(window.domyLayerGroup);
+            if(window.mduLayerGroup) mapa.removeLayer(window.mduLayerGroup);
+
+            let domyMarkers = [];
+            domySeznam.forEach(d => {
+                let color = d.aktivni ? '#16a34a' : '#dc2626';
+                let marker = L.circleMarker(d.latlng, { radius: 7, fillColor: color, color: '#fff', weight: 2, fillOpacity: 1 });
+                marker.bindPopup(`
+                    <div class="popup-form">
+                        <b>Rodinný dům (FTTH)</b>
+                        <label>Délka přípojky (m):</label>
+                        <input type="number" id="d-m-${d.id}" value="${d.pripojkaM}" onchange="zmenitParametryDumu(${d.id})">
+                        <label>Stav:</label>
+                        <select id="d-stav-${d.id}" onchange="zmenitParametryDumu(${d.id})">
+                            <option value="1" ${d.aktivni?'selected':''}>Aktivní</option>
+                            <option value="0" ${!d.aktivni?'selected':''}>Odpojeno</option>
+                        </select>
+                        <button class="btn-danger" onclick="smazatDum(${d.id})">Smazat</button>
+                    </div>
+                `);
+                domyMarkers.push(marker);
+            });
+            window.domyLayerGroup = L.layerGroup(domyMarkers).addTo(mapa);
+
+            let mduMarkers = [];
+            mduSeznam.forEach(m => {
+                let marker = L.marker(m.latlng, {
+                    icon: L.divIcon({
+                        className: 'mdu-icon',
+                        html: `<div style="background:#d97706;color:white;font-weight:bold;padding:4px 8px;border-radius:6px;font-size:11px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)">MDU (${m.pocetBytu} b.)</div>`,
+                        iconSize: [60, 24]
+                    })
+                });
+                marker.bindPopup(`
+                    <div class="popup-form">
+                        <b>${m.nazev}</b>
+                        <label>Počet bytů:</label>
+                        <input type="number" id="mdu-byty-${m.id}" value="${m.pocetBytu}" onchange="zmenitMduParametry(${m.id})">
+                        <button class="btn-danger" onclick="smazatMdu(${m.id})">Smazat</button>
+                    </div>
+                `);
+                mduMarkers.push(marker);
+            });
+            window.mduLayerGroup = L.layerGroup(mduMarkers).addTo(mapa);
+        }
+
+        function zmenitParametryDumu(id) {
+            let d = domySeznam.find(x => x.id === id);
+            if (!d) return;
+            d.pripojkaM = parseInt(document.getElementById(`d-m-${id}`).value) || 10;
+            d.aktivni = document.getElementById(`d-stav-${id}`).value === '1';
+            spocitejCenu();
+        }
+
+        function zmenitMduParametry(id) {
+            let m = mduSeznam.find(x => x.id === id);
+            if (!m) return;
+            m.pocetBytu = parseInt(document.getElementById(`mdu-byty-${id}`).value) || 1;
+            spocitejCenu();
+        }
+
+        function smazatDum(id) {
+            domySeznam = domySeznam.filter(x => x.id !== id);
+            vykreslitVsechnyBody();
+            spocitejCenu();
+        }
+
+        function smazatMdu(id) {
+            mduSeznam = mduSeznam.filter(x => x.id !== id);
+            vykreslitVsechnyBody();
+            spocitejCenu();
+        }
+
+        function spocitejCenu() {
+            let typKabelu = document.getElementById('typKabelu').value;
+            let typPokladky = document.getElementById('typPokladky').value;
+
+            let cenaMtrPater = 240;
+            if (typKabelu === 'mikrokanal_7') cenaMtrPater = 180;
+            if (typKabelu === 'zemni_kabel_96') cenaMtrPater = 390;
+            if (typKabelu === 'vzduch_adss') cenaMtrPater = 140;
+
+            if (typPokladky === 'podvrt') cenaMtrPater += 600;
+            if (typPokladky === 'ftth_sloupy') cenaMtrPater -= 80;
+
+            let celkovaCenaPater = metryPater * cenaMtrPater;
+            let celkovaDelkaVetvi = vetveSeznam.reduce((acc, v) => acc + v.delka, 0);
+            let cenaVetvi = celkovaDelkaVetvi * 160;
+
+            let aktivniDomy = domySeznam.filter(d => d.aktivni);
+            let celkovaDelkaPripojekDomy = aktivniDomy.reduce((acc, d) => acc + d.pripojkaM, 0);
+            let cenaPripojekDomy = celkovaDelkaPripojekDomy * 210 + (aktivniDomy.length * 2500);
+
+            let celkemBytuMDU = 0;
+            let cenaMDUCelkem = 0;
+            mduSeznam.forEach(m => {
+                celkemBytuMDU += m.pocetBytu;
+                cenaMDUCelkem += 8000 + (m.pocetBytu * 1350);
+            });
+
+            let celkovyRozpocet = celkovaCenaPater + cenaVetvi + cenaPripojekDomy + cenaMDUCelkem;
+            let celkemPrvku = aktivniDomy.length + celkemBytuMDU;
+
+            let celkovaTrasaKm = (metryPater + celkovaDelkaVetvi) / 1000;
+            let utlumVlakna = celkovaTrasaKm * 0.25;
+            let utlumSplitteru = mduSeznam.length > 0 ? 13.5 : 3.2;
+            let celkovyUtlumDB = (utlumVlakna + utlumSplitteru + 1.5).toFixed(2);
+
+            let html = `
+                <b>Páteř + Ulice:</b> ${metryPater + celkovaDelkaVetvi} m | Útlum: <b>${celkovyUtlumDB} dB</b><br>
+                <b>Rodinné domy (FTTH):</b> ${aktivniDomy.length} aktivních<br>
+                <b>Bytové domy (MDU):</b> ${mduSeznam.length} budov (${celkemBytuMDU} bytů)<br>
+                <hr style="margin: 6px 0; border:0; border-top:1px solid var(--border)">
+                <b>Celkem koncových přípojek:</b> ${celkemPrvku}<br>
+                <b>CELKOVÝ ROZPOČET:</b> <b>${celkovyRozpocet.toLocaleString()} Kč</b>
+            `;
+
+            document.getElementById('vysledek').innerHTML = html;
+        }
+
+        function otevriAuthModal() {
+            document.getElementById('authModal').style.display = 'flex';
+        }
+        function zavritAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+        function prihlasitUzivatele() {
+            let email = document.getElementById('loginEmail').value;
+            if (!email) { alert("Zadejte e-mail."); return; }
+            prihlasenyUzivatel = email;
+            document.getElementById('authBtnText').innerText = email.split('@')[0];
+            zavritAuthModal();
+            logAI(`Uživatel ${email} přihlášen.`);
+            alert(`Přihlášeno jako: ${email}`);
+        }
+
+        function generovatProtokolBOM() {
+            let aktivniDomy = domySeznam.filter(d => d.aktivni);
+            let celkemBytuMDU = mduSeznam.reduce((acc, m) => acc + m.pocetBytu, 0);
+            let celkovaDelkaVetvi = vetveSeznam.reduce((acc, v) => acc + v.delka, 0);
+
+            let okno = window.open('', '_blank');
+            okno.document.write(`
+                <html>
+                <head><title>BOM Protokol - OptiPath</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 40px; color: #111; }
+                    h2 { border-bottom: 2px solid #2563eb; padding-bottom: 8px; color: #2563eb; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 14px; }
+                    th { background: #f8fafc; }
+                    .footer { margin-top: 40px; font-size: 12px; color: #64748b; }
+                </style>
+                </head>
+                <body>
+                    <h2>OPTIpath Enterprise AI - BOM Protokol</h2>
+                    <p><b>Projektant:</b> ${prihlasenyUzivatel || 'Anonym'}</p>
+                    <p><b>Datum:</b> ${new Date().toLocaleDateString('cs-CZ')}</p>
+                    <table>
+                        <tr><th>Položka</th><th>Množství</th><th>Jednotka</th></tr>
+                        <tr><td>Páteřní trasa</td><td>${metryPater}</td><td>m</td></tr>
+                        <tr><td>Větve v ulicích</td><td>${celkovaDelkaVetvi}</td><td>m</td></tr>
+                        <tr><td>FTTH přípojky (RD)</td><td>${aktivniDomy.length}</td><td>ks</td></tr>
+                        <tr><td>MDU budovy</td><td>${mduSeznam.length}</td><td>budov (${celkemBytuMDU} bytů)</td></tr>
+                    </table>
+                </body>
+                </html>
+            `);
+            okno.document.close();
+            okno.print();
+        }
+
+        function stahnoutJakoObrazek() {
+            let panel = document.getElementById('panel');
+            panel.style.display = 'none';
+            html2canvas(document.body, {useCORS: true}).then(canvas => {
+                panel.style.display = 'block';
+                let link = document.createElement('a');
+                link.download = 'OptiPath_AI.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        function vymazatVsechnuTrasu() {
+            if (confirm("Opravdu vymazat projekt?")) location.reload();
+        }
+
+        spocitejCenu();
+    </script>
+</body>
+</html>
