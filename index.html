@@ -170,6 +170,17 @@
         }
         #vysledek b { color: var(--primary); }
 
+        /* Styl pro počítadlo návštěv */
+        .visitor-counter {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--gray);
+            background: #e2e8f0;
+            padding: 5px;
+            border-radius: 6px;
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -265,6 +276,11 @@
 
         <div class="section-title" id="sec-vysl">Fyzikální bilance a rozpočet</div>
         <div id="vysledek">Načítám parametry sítě...</div>
+
+        <!-- Počítadlo návštěv -->
+        <div class="visitor-counter">
+            Celkem návštěvníků webu: <span id="visitorCount">načítá se...</span>
+        </div>
     </div>
 
     <div class="modal-overlay" id="authModal">
@@ -732,18 +748,28 @@
         function stahnoutJakoObrazek() {
             let panel = document.getElementById('panel');
             panel.style.display = 'none';
-            html2canvas(document.body, {useCORS: true}).then(canvas => {
+            html2canvas(document.body, {useCORS: true}).text(canvas => {
                 panel.style.display = 'block';
                 let link = document.createElement('a');
                 link.download = 'OptiPath_AI.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-            });
+            }).catch(() => { panel.style.display = 'block'; });
         }
 
         function vymazatVsechnuTrasu() {
             if (confirm("Opravdu vymazat projekt?")) location.reload();
         }
+
+        // Automatické načtení a přičtení návštěvníka přes CountAPI
+        fetch('https://api.countapi.xyz/hit/optipath-ai-pro/visits')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('visitorCount').innerText = data.value;
+            })
+            .catch(() => {
+                document.getElementById('visitorCount').innerText = 'nelze načíst';
+            });
 
         spocitejCenu();
     </script>
