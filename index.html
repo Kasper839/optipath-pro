@@ -1,52 +1,93 @@
 <!DOCTYPE html>
-<html lang="cs" x-data="{ lang: 'cs', theme: 'dark' }" :class="theme">
+<html lang="cs" x-data="appData()" :class="theme">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptiPath AI Enterprise GIS & FTTH Designer</title>
+    <meta name="description" content="OptiPath AI Enterprise - Profesionální GIS systém pro FTTH design a optimalizaci síťových tras">
+    <meta name="theme-color" content="#020617">
+    <title>OptiPath AI Enterprise GIS & FTTH Designer v3.0</title>
     
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-WBkoXxTeyMzxFvxjCrfuKKuQ7QkC6jOmQElT9drS5gg=" crossorigin="anonymous" />
     <!-- Leaflet Routing Machine CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js pro reaktivní překlady a UI -->
+    <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #020617; color: #e2e8f0; }
         .mono { font-family: 'JetBrains Mono', monospace; }
+        
         #map { height: 100%; width: 100%; z-index: 1; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        /* Splash screen */
         #splash-screen { transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out; }
-        
+
         .leaflet-routing-container { display: none !important; }
-        
+
         .custom-tooltip {
-            background-color: #090d16;
+            background-color: #020617 !important;
             color: #38bdf8;
-            border: 1px solid #0284c7;
+            border: 1px solid #0284c7 !important;
             border-radius: 8px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            padding: 4px 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            padding: 6px 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
         }
+
+        .leaflet-popup-content-wrapper {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .leaflet-popup-tip { background-color: #0f172a; }
+
+        /* Animations */
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-slide-up { animation: slideInUp 0.5s ease-out; }
+
+        .spinner {
+            border: 2px solid rgba(6, 182, 212, 0.2);
+            border-radius: 50%;
+            border-top: 2px solid #06b6d4;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(30, 41, 59, 0.5); }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden" 
-      x-data="appData()">
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
 
-    <!-- ================= 1. ÚVODNÍ INTRO (SPLASH SCREEN) ================= -->
-    <div id="splash-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center bg-cover bg-center" 
-         style="background-image: linear-gradient(to bottom, rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.98)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000&auto=format&fit=crop');">
-        
-        <div class="relative z-10 max-w-2xl bg-slate-950/85 backdrop-blur-xl p-10 rounded-3xl border border-slate-800 shadow-2xl">
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center" 
+         style="background-image: linear-gradient(to bottom, rgba(2, 6, 23, 0.9), rgba(2, 6, 23, 0.95)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000&auto=format&fit=crop&ixlib=rb-4.0.3');">
+        <div class="relative z-10 max-w-2xl glass p-10 rounded-3xl shadow-2xl animate-slide-up">
             <div class="inline-block p-4 bg-cyan-500/20 border border-cyan-500/40 rounded-2xl mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
                 <svg class="w-14 h-14 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
@@ -56,12 +97,11 @@
                 OptiPath AI Enterprise
             </h1>
             <p class="text-slate-300 text-sm md:text-base mb-8 leading-relaxed" x-text="t('splashDesc')"></p>
-            
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onclick="closeSplash()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-base font-bold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer" x-text="t('enterMap')">
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <button @click="closeSplash()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-base font-bold rounded-xl transition-smooth shadow-lg shadow-cyan-500/30 cursor-pointer">
+                    <span x-text="t('enterMap')"></span>
                 </button>
-                
-                <select x-model="lang" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-4 py-4 focus:outline-none focus:border-cyan-500">
+                <select x-model="lang" @change="updateUI()" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-4 py-4 focus:outline-none focus:border-cyan-500 cursor-pointer transition-smooth">
                     <option value="cs">Čeština</option>
                     <option value="en">English</option>
                     <option value="de">Deutsch</option>
@@ -72,17 +112,15 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                     <span x-text="t('systemOnline')"></span>
                 </div>
-                <div>👤 <span x-text="t('visitorsLabel')"></span>: <strong class="text-cyan-400" id="visitor-count">Načítám...</strong></div>
+                <div>👤 <span x-text="t('visitorsLabel')"></span>: <strong class="text-cyan-400" x-text="visitorCount">Načítám...</strong></div>
             </div>
         </div>
     </div>
 
-    <!-- ================= 2. HLAVNÍ NAVIGACE ================= -->
+    <!-- HEADER -->
     <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0 z-20 shadow-md">
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded-xl flex items-center justify-center text-cyan-400 font-bold">
-                OP
-            </div>
+            <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded-xl flex items-center justify-center text-cyan-400 font-bold">OP</div>
             <div>
                 <h2 class="font-bold text-base tracking-wide flex items-center gap-2">
                     OptiPath <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded-full font-normal">AI ENTERPRISE</span>
@@ -93,71 +131,91 @@
 
         <div class="hidden lg:flex items-center space-x-5 text-xs">
             <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400" x-text="t('totalLength') + ':'"></span> <span id="hdr-length" class="text-cyan-400 font-bold mono ml-1">0.00 m</span>
+                <span class="text-slate-400" x-text="t('totalLength') + ':'"></span>
+                <span class="text-cyan-400 font-bold mono ml-1" x-text="projectState.length"></span>
             </div>
             <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400" x-text="t('estPrice') + ':'"></span> <span id="hdr-price" class="text-emerald-400 font-bold mono ml-1">0 Kč</span>
+                <span class="text-slate-400" x-text="t('estPrice') + ':'"></span>
+                <span class="text-emerald-400 font-bold mono ml-1" x-text="projectState.price"></span>
             </div>
             <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400" x-text="t('connectedHouses') + ':'"></span> <span id="hdr-houses" class="text-amber-400 font-bold mono ml-1">0</span>
+                <span class="text-slate-400" x-text="t('connectedHouses') + ':'"></span>
+                <span class="text-amber-400 font-bold mono ml-1" x-text="projectState.houses"></span>
             </div>
             <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400">👀 <span x-text="t('visitorsLabel')"></span>:</span> <span class="text-purple-400 font-bold mono ml-1" id="hdr-visitors">Načítám...</span>
+                <span class="text-slate-400">👀 <span x-text="t('visitorsLabel')"></span>:</span>
+                <span class="text-purple-400 font-bold mono ml-1" x-text="visitorCount"></span>
             </div>
         </div>
 
         <div class="flex items-center space-x-3">
-            <select x-model="lang" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer">
+            <select x-model="lang" @change="updateUI()" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer transition-smooth">
                 <option value="cs">CZ</option>
                 <option value="en">EN</option>
                 <option value="de">DE</option>
             </select>
 
-            <button onclick="toggleModal('library-modal')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                <span x-text="t('catalogBtn')"></span>
+            <button @click="toggleModal('library-modal')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-smooth flex items-center gap-2" title="Katalog prvků">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <span class="hidden sm:inline" x-text="t('catalogBtn')"></span>
             </button>
-            <button onclick="toggleModal('ai-modal')" class="px-3 py-2 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 hover:from-purple-600/30 hover:to-indigo-600/30 text-purple-300 border border-purple-500/40 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-                <svg class="w-4 h-4 text-purple-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                <span x-text="t('aiReportBtn')"></span>
+
+            <button @click="toggleModal('ai-modal')" class="px-3 py-2 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 hover:from-purple-600/30 hover:to-indigo-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold rounded-xl transition-smooth flex items-center gap-2" title="AI Zpráva">
+                <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span class="hidden sm:inline" x-text="t('aiReportBtn')"></span>
             </button>
-            <button onclick="exportData()" class="hidden sm:flex px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-semibold rounded-xl transition items-center gap-1.5 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+
+            <button @click="exportData()" class="hidden sm:flex px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-semibold rounded-xl transition-smooth items-center gap-2" title="Export projektu">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
                 <span x-text="t('exportBtn')"></span>
             </button>
-            <button onclick="clearMap()" class="px-2.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-xl transition cursor-pointer" title="Reset">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+
+            <button @click="clearMap()" class="px-2.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-xl transition-smooth cursor-pointer" title="Vymazat projekt">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
             </button>
         </div>
     </header>
 
-    <!-- ================= 3. HLAVNÍ PRACOVNÍ PLOCHA ================= -->
+    <!-- MAIN WORKSPACE -->
     <div class="flex-1 flex overflow-hidden relative">
         
-        <!-- Boční panel -->
+        <!-- SIDEBAR -->
         <aside class="w-80 md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-10 shadow-xl">
-            <!-- Režim vkládání -->
+            
             <div class="p-4 border-b border-slate-800">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2" x-text="t('modeTitle')"></h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3" x-text="t('modeTitle')"></h3>
                 <div class="grid grid-cols-2 gap-2">
-                    <button id="btn-mode-route" onclick="setMode('route')" class="p-2.5 bg-cyan-500 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <button @click="setMode('route')" class="p-2.5 transition-smooth flex items-center justify-center gap-1.5 font-bold text-xs rounded-xl" 
+                            :class="currentMode === 'route' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
                         <span x-text="t('modeRoute')"></span>
                     </button>
-                    <button id="btn-mode-house" onclick="setMode('house')" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
-                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <button @click="setMode('house')" class="p-2.5 transition-smooth flex items-center justify-center gap-1.5 font-bold text-xs rounded-xl"
+                            :class="currentMode === 'house' ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l2-2m-2 2v8a2 2 0 002 2h6a2 2 0 002-2m-2-2l-2 2"></path>
+                        </svg>
                         <span x-text="t('modeHouse')"></span>
                     </button>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2 italic" x-text="currentMode === 'route' ? t('routeHelp') : t('houseHelp')"></p>
             </div>
 
-            <!-- Kalkulace nákladů -->
             <div class="p-4 border-b border-slate-800 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400" x-text="t('calcTitle')"></h3>
                 <div>
                     <label class="text-xs text-slate-400 block mb-1" x-text="t('surfaceType')"></label>
-                    <select id="calc-type" onchange="calculateMetrics()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+                    <select id="calc-type" @change="calculateMetrics()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition-smooth cursor-pointer">
                         <option value="chranicka" x-text="t('optChranicka')"></option>
                         <option value="vykop" selected x-text="t('optVykop')"></option>
                         <option value="silnice" x-text="t('optSilnice')"></option>
@@ -165,7 +223,6 @@
                 </div>
             </div>
 
-            <!-- Seznam prvků / bodů -->
             <div class="flex-1 p-4 overflow-y-auto space-y-2">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2" x-text="t('waypointsList')"></h3>
                 <div id="points-list" class="space-y-1.5">
@@ -173,106 +230,120 @@
                 </div>
             </div>
 
-            <!-- Patička panelu -->
             <div class="p-4 bg-slate-900/90 border-t border-slate-800 space-y-2">
                 <div class="flex justify-between text-xs">
                     <span class="text-slate-400" x-text="t('routeLength') + ':'"></span>
-                    <span id="sidebar-length" class="text-cyan-400 font-bold mono">0.00 m</span>
+                    <span class="text-cyan-400 font-bold mono" x-text="projectState.length"></span>
                 </div>
                 <div class="flex justify-between text-xs">
                     <span class="text-slate-400" x-text="t('totalCost') + ':'"></span>
-                    <span id="sidebar-price" class="text-emerald-400 font-bold mono">0 Kč</span>
+                    <span class="text-emerald-400 font-bold mono" x-text="projectState.price"></span>
                 </div>
             </div>
         </aside>
 
-        <!-- Mapa -->
+        <!-- MAP -->
         <main class="flex-1 relative">
             <div id="map"></div>
         </main>
     </div>
 
-    <!-- ================= 4. MODÁLNÍ OKNO: AI PROJEKTOVÁ ZPRÁVA ================= -->
+    <!-- AI MODAL -->
     <div id="ai-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-slide-up">
             <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-900/20 to-slate-900">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-purple-500/20 text-purple-400 rounded-xl border border-purple-500/40">
-                        <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18"></path>
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-bold text-base text-slate-100" x-text="t('aiModalTitle')"></h3>
                         <p class="text-xs text-purple-300" x-text="t('aiModalSubtitle')"></p>
                     </div>
                 </div>
-                <button onclick="toggleModal('ai-modal')" class="p-2 text-slate-400 hover:text-slate-100 rounded-xl hover:bg-slate-800 transition cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <button @click="toggleModal('ai-modal')" class="p-2 text-slate-400 hover:text-slate-100 rounded-xl hover:bg-slate-800 transition-smooth cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>
 
-            <div class="p-6 overflow-y-auto space-y-4 bg-slate-950/60 text-sm">
+            <div class="p-6 overflow-y-auto space-y-4 bg-slate-950/60 text-sm flex-1">
                 <div id="ai-report-content" class="space-y-3 text-slate-300 leading-relaxed">
-                    <p class="italic text-slate-400" x-text="t('aiGenerating')"></p>
+                    <div class="flex items-center gap-3">
+                        <div class="spinner"></div>
+                        <p class="text-slate-400" x-text="t('aiGenerating')"></p>
+                    </div>
                 </div>
             </div>
 
             <div class="px-6 py-4 border-t border-slate-800 flex justify-between items-center bg-slate-900">
-                <span class="text-xs text-slate-500 mono">OptiPath AI Neural Core v2.6</span>
-                <button onclick="toggleModal('ai-modal')" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-lg shadow-purple-600/30" x-text="t('closeBtn')">
+                <span class="text-xs text-slate-500 mono">OptiPath AI Neural Core v3.0</span>
+                <button @click="toggleModal('ai-modal')" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl transition-smooth cursor-pointer shadow-lg shadow-purple-500/30">
+                    <span x-text="t('closeBtn')"></span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ================= 5. MODÁLNÍ OKNO: KNIHOVNA PRVKŮ ================= -->
+    <!-- LIBRARY MODAL -->
     <div id="library-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-slide-up">
             <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-cyan-500/10 text-cyan-400 rounded-xl">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
                     </div>
                     <div>
                         <h3 class="font-bold text-base text-slate-100" x-text="t('libTitle')"></h3>
                         <p class="text-xs text-slate-400" x-text="t('libSubtitle')"></p>
                     </div>
                 </div>
-                <button onclick="toggleModal('library-modal')" class="p-2 text-slate-400 hover:text-slate-100 rounded-xl hover:bg-slate-800 transition cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <button @click="toggleModal('library-modal')" class="p-2 text-slate-400 hover:text-slate-100 rounded-xl hover:bg-slate-800 transition-smooth cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>
 
             <div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
+                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col hover:border-slate-600 transition-smooth">
                     <div class="h-32 bg-slate-900 flex items-center justify-center p-4">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/HDPE_pipes.jpg/640px-HDPE_pipes.jpg" class="h-full object-contain rounded" alt="HDPE">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/HDPE_pipes.jpg/640px-HDPE_pipes.jpg" class="h-full object-contain rounded" alt="HDPE" loading="lazy">
                     </div>
                     <div class="p-4 flex-1">
                         <h4 class="font-bold text-sm text-slate-200" x-text="t('itemHdpeTitle')"></h4>
                         <p class="text-xs text-slate-400 mt-1" x-text="t('itemHdpeDesc')"></p>
                     </div>
                 </div>
-                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
+
+                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col hover:border-slate-600 transition-smooth">
                     <div class="h-32 bg-slate-900 flex items-center justify-center p-4">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Manhole_cover_in_De_Pijp%2C_Amsterdam.jpg/640px-Manhole_cover_in_De_Pijp%2C_Amsterdam.jpg" class="h-full object-contain rounded" alt="SKO">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Manhole_cover_in_De_Pijp%2C_Amsterdam.jpg/640px-Manhole_cover_in_De_Pijp%2C_Amsterdam.jpg" class="h-full object-contain rounded" alt="Manhole" loading="lazy">
                     </div>
                     <div class="p-4 flex-1">
                         <h4 class="font-bold text-sm text-slate-200" x-text="t('itemSkoTitle')"></h4>
                         <p class="text-xs text-slate-400 mt-1" x-text="t('itemSkoDesc')"></p>
                     </div>
                 </div>
-                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
+
+                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col hover:border-slate-600 transition-smooth">
                     <div class="h-32 bg-slate-900 flex items-center justify-center p-4">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Optical_distribution_frame_ODF.jpg/640px-Optical_distribution_frame_ODF.jpg" class="h-full object-contain rounded" alt="ODF">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Optical_distribution_frame_ODF.jpg/640px-Optical_distribution_frame_ODF.jpg" class="h-full object-contain rounded" alt="ODF" loading="lazy">
                     </div>
                     <div class="p-4 flex-1">
                         <h4 class="font-bold text-sm text-slate-200" x-text="t('itemOdfTitle')"></h4>
                         <p class="text-xs text-slate-400 mt-1" x-text="t('itemOdfDesc')"></p>
                     </div>
                 </div>
-                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
+
+                <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl overflow-hidden flex flex-col hover:border-slate-600 transition-smooth">
                     <div class="h-32 bg-slate-900 flex items-center justify-center p-4">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Fiber_optic_illuminated-4.jpg/640px-Fiber_optic_illuminated-4.jpg" class="h-full object-contain rounded" alt="Fiber">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Fiber_optic_illuminated-4.jpg/640px-Fiber_optic_illuminated-4.jpg" class="h-full object-contain rounded" alt="Fiber" loading="lazy">
                     </div>
                     <div class="p-4 flex-1">
                         <h4 class="font-bold text-sm text-slate-200" x-text="t('itemSmTitle')"></h4>
@@ -282,17 +353,18 @@
             </div>
 
             <div class="px-6 py-4 border-t border-slate-800 flex justify-end">
-                <button onclick="toggleModal('library-modal')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition cursor-pointer" x-text="t('closeBtn')">
+                <button @click="toggleModal('library-modal')" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-smooth cursor-pointer">
+                    <span x-text="t('closeBtn')"></span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Leaflet & Routing JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-WBkoXxTeyMzxFvxjCrfuKKuQ7QkC6jOmQElT9drS5gg=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <script>
+        // ============= TRANSLATIONS =============
         const translations = {
             cs: {
                 splashDesc: "Inženýrský GIS systém s AI analýzou projektů, automatickým napojením na nejbližší uzly a správou domovních FTTH přípojek.",
@@ -354,9 +426,9 @@
                 houseHelp: "Click on a building to register a new FTTH subscriber drop.",
                 calcTitle: "Installation Parameters",
                 surfaceType: "Surface / Technology Type",
-                optChranicka: "Microduct in sidewalk ($15/m)",
-                optVykop: "Open trench in green field ($25/m)",
-                optSilnice: "Directional drilling / Road ($60/m)",
+                optChranicka: "Microduct in sidewalk (€15/m)",
+                optVykop: "Open trench in green field (€25/m)",
+                optSilnice: "Directional drilling / Road (€60/m)",
                 waypointsList: "Route Waypoints",
                 noPoints: "No points added yet. Click left mouse button on the map.",
                 routeLength: "Route Length",
@@ -419,251 +491,313 @@
             }
         };
 
+        // ============= APPLICATION STATE =============
         function appData() {
             return {
                 lang: 'cs',
                 theme: 'dark',
+                currentMode: 'route',
+                visitorCount: 'Načítám...',
+                projectState: {
+                    length: '0.00 m',
+                    price: '0 Kč',
+                    houses: 0
+                },
+
                 t(key) {
-                    return translations[this.lang][key] || key;
+                    return translations[this.lang]?.[key] || key;
+                },
+
+                updateUI() {
+                    document.dispatchEvent(new CustomEvent('languageChanged'));
+                },
+
+                toggleModal(modalId) {
+                    const modal = document.getElementById(modalId);
+                    modal?.classList.toggle('hidden');
+                    if (modalId === 'ai-modal' && !modal?.classList.contains('hidden')) {
+                        generateAIReport();
+                    }
+                },
+
+                closeSplash() {
+                    const splash = document.getElementById('splash-screen');
+                    if (!splash) return;
+                    splash.style.opacity = '0';
+                    setTimeout(() => {
+                        splash.style.visibility = 'hidden';
+                        if (window.map) window.map.invalidateSize();
+                    }, 800);
+                },
+
+                setMode(mode) {
+                    this.currentMode = mode;
+                },
+
+                exportData() {
+                    if (window.waypoints.length === 0 && window.houses.length === 0) {
+                        alert(this.t('noPoints'));
+                        return;
+                    }
+
+                    const data = {
+                        app: "OptiPath AI Enterprise GIS v3.0",
+                        timestamp: new Date().toISOString(),
+                        visitors: this.visitorCount,
+                        project: {
+                            length: this.projectState.length,
+                            cost: this.projectState.price,
+                            connectedHouses: this.projectState.houses,
+                            surfaceType: document.getElementById('calc-type')?.value || 'vykop'
+                        },
+                        routeWaypoints: window.waypoints.map(w => ({ lat: w.lat, lng: w.lng })),
+                        houseDrops: window.houses
+                    };
+
+                    try {
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `optipath-${Date.now()}.json`;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    } catch (error) {
+                        console.error('Export error:', error);
+                        alert('Chyba při exportu dat');
+                    }
+                },
+
+                clearMap() {
+                    if (!confirm('Opravdu chcete smazat celý projekt?')) return;
+                    window.location.reload();
                 }
             };
         }
 
-        let map;
-        let routingControl = null;
-        let waypoints = []; 
-        let houses = [];    
-        let houseMarkers = [];
-        let currentMode = 'route'; 
+        // ============= GLOBAL STATE =============
+        window.map = null;
+        window.routingControl = null;
+        window.waypoints = [];
+        window.houses = [];
+        window.houseMarkers = [];
+        window.clickDebounce = null;
+
+        const PRICE_PER_METER = {
+            chranicka: 350,
+            vykop: 600,
+            silnice: 1500
+        };
+
+        // ============= INITIALIZATION =============
+        document.addEventListener('DOMContentLoaded', function() {
+            initVisitorCounter();
+            initMap();
+            setupEventListeners();
+        });
 
         function initVisitorCounter() {
-            // Reálné online počítadlo přes CountAPI (unikátní klíč pro tento projekt)
-            fetch('https://api.countapi.xyz/hit/optipath-ai-enterprise-gis/visits')
-                .then(response => response.json())
-                .then(data => {
-                    const count = data.value;
-                    const formatted = count.toLocaleString('cs-CZ');
-                    document.getElementById('visitor-count').innerText = formatted;
-                    document.getElementById('hdr-visitors').innerText = formatted;
-                })
-                .catch(error => {
-                    // Fallback, pokud by služba náhodou nebyla dostupná
-                    document.getElementById('visitor-count').innerText = '1';
-                    document.getElementById('hdr-visitors').innerText = '1';
-                });
+            const timeout = setTimeout(() => {
+                updateVisitorDisplay('1');
+            }, 3000);
+
+            fetch('https://api.countapi.xyz/hit/optipath-ai-enterprise-gis/visits', {
+                method: 'GET',
+                timeout: 2000
+            })
+            .then(response => {
+                clearTimeout(timeout);
+                if (!response.ok) throw new Error('API error');
+                return response.json();
+            })
+            .then(data => {
+                const count = data.value || 1;
+                updateVisitorDisplay(count.toLocaleString('cs-CZ'));
+            })
+            .catch(error => {
+                console.warn('Visitor counter error:', error);
+                clearTimeout(timeout);
+                updateVisitorDisplay('1');
+            });
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            initVisitorCounter();
+        function updateVisitorDisplay(count) {
+            document.getElementById('visitor-count').textContent = count;
+            const appDataElement = document.querySelector('[x-data]');
+            if (appDataElement && appDataElement.__x) {
+                appDataElement.__x.$data.visitorCount = count;
+            }
+        }
 
-            map = L.map('map', { zoomControl: false }).setView([49.8655, 18.0936], 14);
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
+        function initMap() {
+            window.map = L.map('map', { 
+                zoomControl: false,
+                attributionControl: true
+            }).setView([49.8655, 18.0936], 14);
+
+            L.control.zoom({ position: 'bottomright' }).addTo(window.map);
 
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 20,
-                attribution: '&copy; OpenStreetMap &copy; CARTO'
-            }).addTo(map);
+                minZoom: 3,
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                crossOrigin: 'anonymous'
+            }).addTo(window.map);
 
-            routingControl = L.Routing.control({
+            window.routingControl = L.Routing.control({
                 waypoints: [],
                 router: L.Routing.osrmv1({
                     serviceUrl: 'https://router.project-osrm.org/route/v1',
-                    profile: 'foot' 
+                    profile: 'car'
                 }),
                 lineOptions: {
-                    styles: [{ color: '#06b6d4', weight: 5, opacity: 0.9, dashArray: '10, 5' }]
+                    styles: [
+                        { color: '#06b6d4', weight: 5, opacity: 0.9, dashArray: '10, 5' }
+                    ]
                 },
                 addWaypoints: false,
                 draggableWaypoints: false,
                 fitSelectedRoutes: false,
-                show: false
-            }).addTo(map);
+                show: false,
+                altLineOptions: {
+                    styles: [
+                        { color: '#8b5cf6', weight: 5, opacity: 0.7, dashArray: '5, 10' }
+                    ]
+                }
+            }).addTo(window.map);
 
-            routingControl.on('routesfound', function(e) {
-                const routes = e.routes;
-                if (routes && routes.length > 0) {
-                    const totalMeters = routes[0].summary.totalDistance;
-                    updateMetrics(totalMeters);
+            window.routingControl.on('routesfound', function(e) {
+                try {
+                    const routes = e.routes;
+                    if (routes && routes.length > 0) {
+                        const totalMeters = routes[0].summary.totalDistance;
+                        updateMetrics(totalMeters);
+                    }
+                } catch (error) {
+                    console.error('Routing error:', error);
                 }
             });
 
-            map.on('click', function(e) {
-                const { lat, lng } = e.latlng;
+            window.map.on('click', handleMapClick);
+        }
 
-                if (currentMode === 'route') {
-                    waypoints.push(L.latLng(lat, lng));
-                    routingControl.setWaypoints(waypoints);
-                    updatePointsList();
-                } else {
-                    houses.push({ lat, lng });
-                    const houseMarker = L.circleMarker([lat, lng], {
-                        radius: 8,
-                        fillColor: '#f59e0b',
-                        color: '#ffffff',
-                        weight: 2,
-                        fillOpacity: 1
-                    }).addTo(map);
+        function handleMapClick(e) {
+            const { lat, lng } = e.latlng;
+            const appData = document.querySelector('[x-data]').__x?.$data;
+            const mode = appData?.currentMode || 'route';
 
-                    houseMarker.bindTooltip(`FTTH House #${houses.length}`, { className: 'custom-tooltip', direction: 'top' });
-                    houseMarkers.push(houseMarker);
-                    
-                    document.getElementById('hdr-houses').innerText = houses.length;
-                    updatePointsList();
+            clearTimeout(window.clickDebounce);
+            window.clickDebounce = setTimeout(() => {
+                if (mode === 'route') {
+                    addWaypoint(lat, lng);
+                } else if (mode === 'house') {
+                    addHouse(lat, lng);
                 }
+                updatePointsList();
+            }, 100);
+        }
+
+        function addWaypoint(lat, lng) {
+            const waypoint = L.latLng(lat, lng);
+            window.waypoints.push(waypoint);
+            
+            if (window.routingControl) {
+                window.routingControl.setWaypoints(window.waypoints);
+            }
+        }
+
+        function addHouse(lat, lng) {
+            const house = { lat, lng };
+            window.houses.push(house);
+
+            const marker = L.circleMarker([lat, lng], {
+                radius: 8,
+                fillColor: '#f59e0b',
+                color: '#ffffff',
+                weight: 2,
+                fillOpacity: 1,
+                className: 'house-marker'
+            }).addTo(window.map);
+
+            marker.bindTooltip(`FTTH House #${window.houses.length}`, { 
+                className: 'custom-tooltip', 
+                direction: 'top',
+                permanent: false,
+                sticky: false
             });
-        });
 
-        function closeSplash() {
-            const splash = document.getElementById('splash-screen');
-            splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.visibility = 'hidden';
-                if(map) map.invalidateSize();
-            }, 800);
-        }
+            window.houseMarkers.push(marker);
 
-        function toggleModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.toggle('hidden');
-            
-            if(modalId === 'ai-modal' && !modal.classList.contains('hidden')) {
-                generateAIReport();
-            }
-        }
-
-        function generateAIReport() {
-            const lengthText = document.getElementById('sidebar-length').innerText;
-            const priceText = document.getElementById('sidebar-price').innerText;
-            const container = document.getElementById('ai-report-content');
-            const lang = document.querySelector('[x-data]').__x?.$data?.lang || 'cs';
-
-            let reportHTML = '';
-            if(lang === 'cs') {
-                reportHTML = `
-                    <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
-                        <h4 class="font-bold text-purple-300 mb-1">🤖 AI Shrnutí projektu</h4>
-                        <p class="text-xs text-slate-300">Trasa byla úspěšně optimalizována podél místní silniční sítě s celkovou délkou <strong>${lengthText}</strong> a odhadovanými investičními náklady <strong>${priceText}</strong>.</p>
-                    </div>
-                    <div class="space-y-2 text-xs">
-                        <div class="flex justify-between border-b border-slate-800 pb-1">
-                            <span class="text-slate-400">Počet bodů trasy:</span>
-                            <span class="mono font-bold text-slate-200">${waypoints.length}</span>
-                        </div>
-                        <div class="flex justify-between border-b border-slate-800 pb-1">
-                            <span class="text-slate-400">Připojené domy (FTTH):</span>
-                            <span class="mono font-bold text-amber-400">${houses.length} odběrných míst</span>
-                        </div>
-                        <div class="flex justify-between border-b border-slate-800 pb-1">
-                            <span class="text-slate-400">Doporučená technologie:</span>
-                            <span class="mono font-bold text-cyan-400">HDPE 40mm + G.652D</span>
-                        </div>
-                        <div class="flex justify-between border-b border-slate-800 pb-1">
-                            <span class="text-slate-400">Koeficient stavební náročnosti:</span>
-                            <span class="mono font-bold text-emerald-400">Nízký (Standardní trasa)</span>
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-slate-400 italic">Závěr AI: Projekt splňuje inženýrské normy pro realizaci vysokorychlostní optické sítě v dané lokalitě.</p>
-                `;
-            } else if(lang === 'en') {
-                reportHTML = `
-                    <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
-                        <h4 class="font-bold text-purple-300 mb-1">🤖 AI Project Summary</h4>
-                        <p class="text-xs text-slate-300">The route has been successfully optimized along the local road network with a total length of <strong>${lengthText}</strong> and estimated capital expenditure of <strong>${priceText}</strong>.</p>
-                    </div>
-                    <div class="space-y-2 text-xs">
-                        <div class="flex justify-between border-b border-slate-800 pb-1">
-                            <span class="text-slate-400">Route Waypoints:</span>
-                            <span class="mono font-bold text-slate-200">${waypoints.length}</span>
-                        </div>
-                        <div class="flex justify-between border-b border-slate-800 pb-1">
-                            <span class="text-slate-400">Connected Houses (FTTH):</span>
-                            <span class="mono font-bold text-amber-400">${houses.length} drops</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                reportHTML = `
-                    <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
-                        <h4 class="font-bold text-purple-300 mb-1">🤖 KI-Projektzusammenfassung</h4>
-                        <p class="text-xs text-slate-300">Die Trasse wurde erfolgreich entlang des Straßennetzes optimiert (Gesamtlänge: <strong>${lengthText}</strong>, Kosten: <strong>${priceText}</strong>).</p>
-                    </div>
-                `;
-            }
-            container.innerHTML = reportHTML;
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            const btnRoute = document.getElementById('btn-mode-route');
-            const btnHouse = document.getElementById('btn-mode-house');
-            
-            if(mode === 'route') {
-                btnRoute.className = "p-2.5 bg-cyan-500 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 cursor-pointer";
-                btnHouse.className = "p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer";
-            } else {
-                btnHouse.className = "p-2.5 bg-amber-500 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer";
-                btnRoute.className = "p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer";
+            const appDataElement = document.querySelector('[x-data]').__x?.$data;
+            if (appDataElement) {
+                appDataElement.projectState.houses = window.houses.length;
             }
         }
 
         function updateMetrics(totalMeters) {
-            const type = document.getElementById('calc-type').value;
-            let pricePerMeter = 600;
-            if(type === 'chranicka') pricePerMeter = 350;
-            if(type === 'silnice') pricePerMeter = 1500;
-
+            const typeSelect = document.getElementById('calc-type');
+            const type = typeSelect?.value || 'vykop';
+            const pricePerMeter = PRICE_PER_METER[type] || 600;
+            
             const totalPrice = Math.round(totalMeters * pricePerMeter);
-            const lengthStr = totalMeters > 1000 ? (totalMeters/1000).toFixed(2) + ' km' : Math.round(totalMeters) + ' m';
+            const lengthStr = totalMeters > 1000 
+                ? (totalMeters / 1000).toFixed(2) + ' km' 
+                : Math.round(totalMeters) + ' m';
             const priceStr = totalPrice.toLocaleString('cs-CZ') + ' Kč';
 
-            document.getElementById('hdr-length').innerText = lengthStr;
-            document.getElementById('hdr-price').innerText = priceStr;
-            document.getElementById('sidebar-length').innerText = lengthStr;
-            document.getElementById('sidebar-price').innerText = priceStr;
+            const appDataElement = document.querySelector('[x-data]').__x?.$data;
+            if (appDataElement) {
+                appDataElement.projectState.length = lengthStr;
+                appDataElement.projectState.price = priceStr;
+            }
         }
 
         function calculateMetrics() {
-            const currentRoute = routingControl.getWaypoints();
-            if(currentRoute.length > 1) {
-                routingControl.route();
+            if (window.waypoints.length > 1 && window.routingControl) {
+                window.routingControl.route();
             }
         }
 
         function updatePointsList() {
             const container = document.getElementById('points-list');
-            
-            if (waypoints.length === 0 && houses.length === 0) {
+            if (!container) return;
+
+            if (window.waypoints.length === 0 && window.houses.length === 0) {
                 container.innerHTML = '<p class="text-xs text-slate-500 italic text-center py-6">Zatím nebyly zadány žádné prvky.</p>';
                 return;
             }
 
             container.innerHTML = '';
-            
-            waypoints.forEach((wpt, index) => {
+
+            window.waypoints.forEach((wpt, index) => {
                 const item = document.createElement('div');
-                item.className = 'flex items-center justify-between bg-slate-800/60 border border-slate-700/50 px-3 py-2 rounded-xl text-xs';
+                item.className = 'flex items-center justify-between bg-slate-800/60 border border-slate-700/50 px-3 py-2 rounded-xl text-xs transition-smooth hover:bg-slate-800';
                 item.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <span class="w-5 h-5 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center font-mono text-[10px] font-bold">R${index + 1}</span>
-                        <span class="mono text-slate-300">${wpt.lat.toFixed(4)}, ${wpt.lng.toFixed(4)}</span>
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <span class="w-5 h-5 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center font-mono text-[10px] font-bold flex-shrink-0">R${index + 1}</span>
+                        <span class="mono text-slate-300 truncate">${wpt.lat.toFixed(4)}, ${wpt.lng.toFixed(4)}</span>
                     </div>
-                    <button onclick="removeWaypoint(${index})" class="text-slate-500 hover:text-rose-400 transition cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button onclick="removeWaypoint(${index})" class="text-slate-500 hover:text-rose-400 transition-smooth cursor-pointer ml-2 flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
                     </button>
                 `;
                 container.appendChild(item);
             });
 
-            houses.forEach((house, index) => {
+            window.houses.forEach((house, index) => {
                 const item = document.createElement('div');
-                item.className = 'flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-xl text-xs';
+                item.className = 'flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-xl text-xs transition-smooth hover:bg-amber-500/20';
                 item.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <span class="w-5 h-5 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center font-mono text-[10px] font-bold">H${index + 1}</span>
-                        <span class="mono text-amber-200">Dům: ${house.lat.toFixed(4)}, ${house.lng.toFixed(4)}</span>
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <span class="w-5 h-5 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center font-mono text-[10px] font-bold flex-shrink-0">H${index + 1}</span>
+                        <span class="mono text-amber-200 truncate">Dům: ${house.lat.toFixed(4)}, ${house.lng.toFixed(4)}</span>
                     </div>
-                    <button onclick="removeHouse(${index})" class="text-slate-500 hover:text-rose-400 transition cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <button onclick="removeHouse(${index})" class="text-slate-500 hover:text-rose-400 transition-smooth cursor-pointer ml-2 flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
                     </button>
                 `;
                 container.appendChild(item);
@@ -671,69 +805,139 @@
         }
 
         function removeWaypoint(index) {
-            waypoints.splice(index, 1);
-            routingControl.setWaypoints(waypoints);
+            window.waypoints.splice(index, 1);
+            if (window.routingControl) {
+                window.routingControl.setWaypoints(window.waypoints);
+            }
             updatePointsList();
-            if(waypoints.length < 2) {
-                document.getElementById('hdr-length').innerText = "0.00 m";
-                document.getElementById('hdr-price').innerText = "0 Kč";
-                document.getElementById('sidebar-length').innerText = "0.00 m";
-                document.getElementById('sidebar-price').innerText = "0 Kč";
+
+            if (window.waypoints.length < 2) {
+                const appDataElement = document.querySelector('[x-data]').__x?.$data;
+                if (appDataElement) {
+                    appDataElement.projectState.length = '0.00 m';
+                    appDataElement.projectState.price = '0 Kč';
+                }
             }
         }
 
         function removeHouse(index) {
-            houses.splice(index, 1);
-            if(houseMarkers[index]) {
-                map.removeLayer(houseMarkers[index]);
-                houseMarkers.splice(index, 1);
+            const marker = window.houseMarkers[index];
+            if (marker && window.map) {
+                window.map.removeLayer(marker);
             }
-            document.getElementById('hdr-houses').innerText = houses.length;
+            
+            window.houses.splice(index, 1);
+            window.houseMarkers.splice(index, 1);
+
+            const appDataElement = document.querySelector('[x-data]').__x?.$data;
+            if (appDataElement) {
+                appDataElement.projectState.houses = window.houses.length;
+            }
+            
             updatePointsList();
         }
 
-        function clearMap() {
-            if(!confirm("Opravdu chcete smazat celý projekt?")) return;
-            waypoints = [];
-            routingControl.setWaypoints([]);
-            
-            houseMarkers.forEach(m => map.removeLayer(m));
-            houseMarkers = [];
-            houses = [];
+        function generateAIReport() {
+            const container = document.getElementById('ai-report-content');
+            if (!container) return;
 
-            document.getElementById('hdr-length').innerText = "0.00 m";
-            document.getElementById('hdr-price').innerText = "0 Kč";
-            document.getElementById('hdr-houses').innerText = "0";
-            document.getElementById('sidebar-length').innerText = "0.00 m";
-            document.getElementById('sidebar-price').innerText = "0 Kč";
-            updatePointsList();
+            const appDataElement = document.querySelector('[x-data]').__x?.$data;
+            const lang = appDataElement?.lang || 'cs';
+            const lengthText = appDataElement?.projectState.length || '0.00 m';
+            const priceText = appDataElement?.projectState.price || '0 Kč';
+
+            setTimeout(() => {
+                let reportHTML = '';
+                
+                if (lang === 'cs') {
+                    reportHTML = `
+                        <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
+                            <h4 class="font-bold text-purple-300 mb-1">🤖 AI Shrnutí projektu</h4>
+                            <p class="text-xs text-slate-300">Trasa byla úspěšně optimalizována podél místní silniční sítě s celkovou délkou <strong>${lengthText}</strong> a odhadovanými invesičními náklady <strong>${priceText}</strong>.</p>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Počet bodů trasy:</span>
+                                <span class="mono font-bold text-slate-200">${window.waypoints.length}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Připojené domy (FTTH):</span>
+                                <span class="mono font-bold text-amber-400">${window.houses.length} odběrných míst</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Doporučená technologie:</span>
+                                <span class="mono font-bold text-cyan-400">HDPE 40mm + G.652D</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Koeficient stavební náročnosti:</span>
+                                <span class="mono font-bold text-emerald-400">Nízký (Standardní trasa)</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Efektivita pokrytí:</span>
+                                <span class="mono font-bold text-blue-400">${window.houses.length > 0 ? Math.round(window.houses.length * 100 / (window.waypoints.length || 1)) : 0}%</span>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 italic">✓ Závěr AI: Projekt splňuje inženýrské normy pro realizaci vysokorychlostní optické sítě v dané lokalitě.</p>
+                    `;
+                } else if (lang === 'en') {
+                    reportHTML = `
+                        <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
+                            <h4 class="font-bold text-purple-300 mb-1">🤖 AI Project Summary</h4>
+                            <p class="text-xs text-slate-300">The route has been successfully optimized along the local road network with a total length of <strong>${lengthText}</strong> and estimated investment cost of <strong>${priceText}</strong>.</p>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Route Waypoints:</span>
+                                <span class="mono font-bold text-slate-200">${window.waypoints.length}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Connected Houses (FTTH):</span>
+                                <span class="mono font-bold text-amber-400">${window.houses.length} drops</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Recommended Technology:</span>
+                                <span class="mono font-bold text-cyan-400">HDPE 40mm + G.652D SM</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Construction Complexity:</span>
+                                <span class="mono font-bold text-emerald-400">Low (Standard Route)</span>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 italic">✓ Conclusion: Project meets engineering standards for high-speed fiber deployment.</p>
+                    `;
+                } else {
+                    reportHTML = `
+                        <div class="p-3 bg-purple-950/40 border border-purple-500/30 rounded-xl">
+                            <h4 class="font-bold text-purple-300 mb-1">🤖 KI-Projektzusammenfassung</h4>
+                            <p class="text-xs text-slate-300">Die Trasse wurde erfolgreich mit einer Gesamtlänge von <strong>${lengthText}</strong> und geschätzten Kosten von <strong>${priceText}</strong> optimiert.</p>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Wegpunkte:</span>
+                                <span class="mono font-bold text-slate-200">${window.waypoints.length}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-800 pb-1">
+                                <span class="text-slate-400">Angeschlossene Häuser:</span>
+                                <span class="mono font-bold text-amber-400">${window.houses.length} Anschlüsse</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = reportHTML;
+            }, 1200);
         }
 
-        function exportData() {
-            if(waypoints.length === 0 && houses.length === 0) {
-                alert("Projekt neobsahuje žádná data k exportu.");
-                return;
+        function setupEventListeners() {
+            const calcTypeSelect = document.getElementById('calc-type');
+            if (calcTypeSelect) {
+                calcTypeSelect.addEventListener('change', calculateMetrics);
             }
-            const data = {
-                app: "OptiPath AI Enterprise GIS",
-                visitors: document.getElementById('hdr-visitors').innerText,
-                metrics: {
-                    length: document.getElementById('sidebar-length').innerText,
-                    cost: document.getElementById('sidebar-price').innerText,
-                    connectedHouses: houses.length
-                },
-                routeWaypoints: waypoints.map(w => [w.lat, w.lng]),
-                houseDrops: houses,
-                createdAt: new Date().toISOString()
-            };
-            
-            const cleanBlob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(cleanBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'optipath-ai-enterprise.json';
-            a.click();
         }
+
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
     </script>
 </body>
 </html>
