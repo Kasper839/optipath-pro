@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs" x-data="{ lang: 'cs', theme: 'dark' }" :class="theme">
+<html lang="cs" x-data="appData()" :class="theme">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet Routing Machine CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
-    <!-- Leaflet Control Geocoder CSS (pro vyhledávání míst a ulic) -->
+    <!-- Leaflet Control Geocoder CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,7 +40,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
-        /* Stylování vyhledávacího panelu (Geocoder) pro tmavý režim */
+        /* Geocoder (vyhledávání) stylování */
         .leaflet-control-geocoder {
             border-radius: 12px !important;
             border: 1px solid #334155 !important;
@@ -56,9 +56,7 @@
             padding: 8px 12px !important;
             height: auto !important;
         }
-        .leaflet-control-geocoder-form input::placeholder {
-            color: #64748b;
-        }
+        .leaflet-control-geocoder-form input::placeholder { color: #64748b; }
         .leaflet-control-geocoder-icon {
             background-color: #0ea5e9 !important;
             border-radius: 8px !important;
@@ -66,32 +64,18 @@
             height: 32px !important;
             margin: 4px !important;
         }
-        .leaflet-control-geocoder-expanded {
-            width: 300px !important;
-        }
+        .leaflet-control-geocoder-expanded { width: 300px !important; }
         .leaflet-control-geocoder-results {
             background: #0f172a !important;
             border-top: 1px solid #334155 !important;
             border-radius: 0 0 12px 12px !important;
         }
-        .leaflet-control-geocoder-result {
-            border-bottom: 1px solid #1e293b !important;
-        }
-        .leaflet-control-geocoder-result:hover {
-            background: #1e293b !important;
-        }
-        .leaflet-control-geocoder-result a {
-            color: #cbd5e1 !important;
-            font-size: 12px !important;
-            padding: 8px 12px !important;
-        }
-        .leaflet-control-geocoder-result a:hover {
-            color: #38bdf8 !important;
-        }
+        .leaflet-control-geocoder-result { border-bottom: 1px solid #1e293b !important; }
+        .leaflet-control-geocoder-result:hover { background: #1e293b !important; }
+        .leaflet-control-geocoder-result a { color: #cbd5e1 !important; font-size: 12px !important; padding: 8px 12px !important; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden" 
-      x-data="appData()">
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
 
     <!-- ================= 1. ÚVODNÍ INTRO (SPLASH SCREEN) ================= -->
     <div id="splash-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center bg-cover bg-center" 
@@ -112,10 +96,12 @@
                 <button onclick="closeSplash()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-base font-bold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer" x-text="t('enterMap')">
                 </button>
                 
-                <select x-model="lang" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-4 py-4 focus:outline-none focus:border-cyan-500">
+                <select x-model="lang" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-4 py-4 focus:outline-none focus:border-cyan-500 cursor-pointer">
                     <option value="cs">Čeština</option>
                     <option value="en">English</option>
                     <option value="de">Deutsch</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
                 </select>
             </div>
             <div class="mt-8 text-xs text-slate-500 mono flex flex-wrap items-center justify-center gap-4">
@@ -142,7 +128,7 @@
             </div>
         </div>
 
-        <div class="hidden lg:flex items-center space-x-5 text-xs">
+        <div class="hidden lg:flex items-center space-x-4 text-xs">
             <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
                 <span class="text-slate-400" x-text="t('totalLength') + ':'"></span> <span id="hdr-length" class="text-cyan-400 font-bold mono ml-1">0.00 m</span>
             </div>
@@ -152,27 +138,38 @@
             <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
                 <span class="text-slate-400" x-text="t('connectedHouses') + ':'"></span> <span id="hdr-houses" class="text-amber-400 font-bold mono ml-1">0</span>
             </div>
-            <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400">👀 <span x-text="t('visitorsLabel')"></span>:</span> <span class="text-purple-400 font-bold mono ml-1" id="hdr-visitors">Načítám...</span>
-            </div>
         </div>
 
         <div class="flex items-center space-x-3">
+            <!-- Výběr jazyků -->
             <select x-model="lang" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                <option value="cs">CZ</option>
-                <option value="en">EN</option>
-                <option value="de">DE</option>
+                <option value="cs">Čeština</option>
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
             </select>
 
-            <button onclick="toggleModal('library-modal')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+            <!-- Tlačítko přihlášení / profilu -->
+            <template x-if="!currentUser">
+                <button onclick="openAuthModal('login')" class="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    <span x-text="t('loginBtn')"></span>
+                </button>
+            </template>
+            <template x-if="currentUser">
+                <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-200 font-semibold" x-text="currentUser"></span>
+                    <button @click="logout()" class="ml-2 text-rose-400 hover:text-rose-300 font-bold cursor-pointer" title="Odhlásit">&times;</button>
+                </div>
+            </template>
+
+            <button onclick="toggleModal('library-modal')" class="hidden sm:flex px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition items-center gap-1.5 cursor-pointer">
                 <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 <span x-text="t('catalogBtn')"></span>
             </button>
-            <button onclick="toggleModal('ai-modal')" class="px-3 py-2 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 hover:from-purple-600/30 hover:to-indigo-600/30 text-purple-300 border border-purple-500/40 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-                <svg class="w-4 h-4 text-purple-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                <span x-text="t('aiReportBtn')"></span>
-            </button>
-            <button onclick="exportData()" class="hidden sm:flex px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-semibold rounded-xl transition items-center gap-1.5 cursor-pointer">
+            <button onclick="exportData()" class="hidden md:flex px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-semibold rounded-xl transition items-center gap-1.5 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 <span x-text="t('exportBtn')"></span>
             </button>
@@ -290,6 +287,37 @@
     </div>
 
     <!-- ================= MODÁLNÍ OKNA ================= -->
+    
+    <!-- Přihlášení / Registrace MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+                <h3 class="text-base font-bold text-cyan-400" id="auth-title" x-text="t('loginTitle')"></h3>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-100 text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+            
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1" x-text="t('usernameLabel')"></label>
+                    <input type="text" id="auth-username" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1" x-text="t('passwordLabel')"></label>
+                    <input type="password" id="auth-password" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+                </div>
+                
+                <div id="auth-error" class="text-rose-400 hidden"></div>
+
+                <button type="submit" class="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition cursor-pointer" id="auth-submit-btn" x-text="t('loginBtn')"></button>
+            </form>
+
+            <div class="mt-4 text-center text-[11px] text-slate-400">
+                <span id="auth-switch-text" x-text="t('noAccountText')"></span>
+                <button type="button" onclick="switchAuthMode()" class="text-cyan-400 font-semibold ml-1 hover:underline cursor-pointer" id="auth-switch-btn" x-text="t('registerSwitchBtn')"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Katalog prvků -->
     <div id="library-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl relative">
@@ -314,33 +342,16 @@
         </div>
     </div>
 
-    <!-- AI Report -->
-    <div id="ai-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl relative">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-                <h3 class="text-base font-bold text-purple-300 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-purple-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    <span x-text="t('aiReportTitle')"></span>
-                </h3>
-                <button onclick="toggleModal('ai-modal')" class="text-slate-400 hover:text-slate-100 text-xl font-bold cursor-pointer">&times;</button>
-            </div>
-            <div id="ai-report-content" class="space-y-3 text-xs text-slate-300 max-h-96 overflow-y-auto pr-2">
-                Načítám AI analýzu trasy a síťové topologie...
-            </div>
-        </div>
-    </div>
-
     <!-- JavaScript knihovny -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
-    <!-- Leaflet Control Geocoder JS (vyhledávání míst a ulic) -->
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script>
-        // --- LOKALIZACE ---
+        // --- VÍCEJAZYČNÁ PODPORA (5 JAZYKŮ) ---
         const translations = {
             cs: {
-                splashDesc: "Profesionální GIS systém pro návrh optických FTTH sítí, trasování po silnicích a automatický rozpočet rozvoje.",
+                splashDesc: "Profesionální GIS systém pro návrh optických FTTH sítí, trasování po silnicích a automatický rozpočet.",
                 enterMap: "VSTOUPIT DO MAPY & DESIGNÉRU",
                 systemOnline: "GIS systém online & připraven",
                 visitorsLabel: "Návštěvníci",
@@ -348,8 +359,7 @@
                 totalLength: "Délka trasy",
                 estPrice: "Odhad ceny",
                 connectedHouses: "Připojené budovy",
-                catalogBtn: "Katalog prvků",
-                aiReportBtn: "AI Zpráva",
+                catalogBtn: "Katalog",
                 exportBtn: "Export",
                 drawModeTitle: "Režim kreslení",
                 modeRoute: "Trasa (silnice)",
@@ -365,7 +375,15 @@
                 totalPrice: "Celková cena (CZK)",
                 exportProjectBtn: "VYGENEROVAT PROJEKT (JSON)",
                 catalogTitle: "Katalog materiálů a prvků",
-                aiReportTitle: "AI Analýza trasy"
+                loginBtn: "Přihlásit se",
+                loginTitle: "Přihlášení do systému",
+                registerTitle: "Registrace nového uživatele",
+                usernameLabel: "Uživatelské jméno",
+                passwordLabel: "Heslo",
+                noAccountText: "Nemáte účet?",
+                registerSwitchBtn: "Zaregistrovat se",
+                hasAccountText: "Již máte účet?",
+                loginSwitchBtn: "Přihlásit se"
             },
             en: {
                 splashDesc: "Professional GIS system for optical FTTH network design, road routing, and automated cost estimation.",
@@ -376,8 +394,7 @@
                 totalLength: "Route Length",
                 estPrice: "Est. Price",
                 connectedHouses: "Connected Buildings",
-                catalogBtn: "Component Catalog",
-                aiReportBtn: "AI Report",
+                catalogBtn: "Catalog",
                 exportBtn: "Export",
                 drawModeTitle: "Drawing Mode",
                 modeRoute: "Route (Roads)",
@@ -393,7 +410,15 @@
                 totalPrice: "Total Cost (CZK)",
                 exportProjectBtn: "GENERATE PROJECT (JSON)",
                 catalogTitle: "Material & Component Catalog",
-                aiReportTitle: "AI Route Analysis"
+                loginBtn: "Sign In",
+                loginTitle: "System Login",
+                registerTitle: "New User Registration",
+                usernameLabel: "Username",
+                passwordLabel: "Password",
+                noAccountText: "Don't have an account?",
+                registerSwitchBtn: "Register",
+                hasAccountText: "Already have an account?",
+                loginSwitchBtn: "Sign In"
             },
             de: {
                 splashDesc: "Professionelles GIS-System für FTTH-Glasfasernetz-Design, Straßenrouting und automatisierte Kostenkalkulation.",
@@ -404,8 +429,7 @@
                 totalLength: "Trassenlänge",
                 estPrice: "Gesch. Preis",
                 connectedHouses: "Verbundene Gebäude",
-                catalogBtn: "Komponentenkatalog",
-                aiReportBtn: "AI Bericht",
+                catalogBtn: "Katalog",
                 exportBtn: "Export",
                 drawModeTitle: "Zeichenmodus",
                 modeRoute: "Trasse (Straßen)",
@@ -421,7 +445,85 @@
                 totalPrice: "Gesamtkosten (CZK)",
                 exportProjectBtn: "PROJEKT GENERIEREN (JSON)",
                 catalogTitle: "Material- und Komponenten-Katalog",
-                aiReportTitle: "AI Trassenanalyse"
+                loginBtn: "Anmelden",
+                loginTitle: "System-Anmeldung",
+                registerTitle: "Neuartige Registrierung",
+                usernameLabel: "Benutzername",
+                passwordLabel: "Passwort",
+                noAccountText: "Kein Konto?",
+                registerSwitchBtn: "Registrieren",
+                hasAccountText: "Bereits ein Konto?",
+                loginSwitchBtn: "Anmelden"
+            },
+            fr: {
+                splashDesc: "Système SIG professionnel pour la conception de réseaux optiques FTTH, routage routier et estimation des coûts.",
+                enterMap: "ENTRER DANS LA CARTE",
+                systemOnline: "Système SIG en ligne & prêt",
+                visitorsLabel: "Visiteurs",
+                navSubtitle: "FTTH Route Designer & GIS Workspace",
+                totalLength: "Longueur",
+                estPrice: "Prix Est.",
+                connectedHouses: "Bâtiments",
+                catalogBtn: "Catalogue",
+                exportBtn: "Exporter",
+                drawModeTitle: "Mode de Dessin",
+                modeRoute: "Tracé (Routes)",
+                modeHouse: "Bâtiment / POP",
+                networkParams: "Paramètres Réseau",
+                cableType: "Type de Câble",
+                excavationType: "Type de Terrassement",
+                terrainType: "Coefficient de Terrain",
+                liveBudgetTitle: "Budget en Direct",
+                cableLength: "Longueur Câble",
+                cablePrice: "Coût Câble",
+                excavationPrice: "Coût Terrassement",
+                totalPrice: "Coût Total (CZK)",
+                exportProjectBtn: "GÉNÉRER PROJET (JSON)",
+                catalogTitle: "Catalogue des Matériaux",
+                loginBtn: "Connexion",
+                loginTitle: "Connexion au Système",
+                registerTitle: "Créer un Compte",
+                usernameLabel: "Nom d'utilisateur",
+                passwordLabel: "Mot de passe",
+                noAccountText: "Pas de compte ?",
+                registerSwitchBtn: "S'inscrire",
+                hasAccountText: "Déjà un compte ?",
+                loginSwitchBtn: "Connexion"
+            },
+            es: {
+                splashDesc: "Sistema SIG profesional para diseño de redes ópticas FTTH, enrutamiento vial y estimación de costos.",
+                enterMap: "ENTRAR AL MAPA",
+                systemOnline: "Sistema SIG en línea y listo",
+                visitorsLabel: "Visitantes",
+                navSubtitle: "FTTH Route Designer & GIS Workspace",
+                totalLength: "Longitud",
+                estPrice: "Precio Est.",
+                connectedHouses: "Edificios Conectados",
+                catalogBtn: "Catálogo",
+                exportBtn: "Exportar",
+                drawModeTitle: "Modo de Dibujo",
+                modeRoute: "Ruta (Carreteras)",
+                modeHouse: "Edificio / POP",
+                networkParams: "Parámetros de Red",
+                cableType: "Tipo de Cable",
+                excavationType: "Tipo de Excavación",
+                terrainType: "Coeficiente de Terreno",
+                liveBudgetTitle: "Presupuesto en Vivo",
+                cableLength: "Longitud de Cable",
+                cablePrice: "Costo de Cable",
+                excavationPrice: "Costo de Excavación",
+                totalPrice: "Costo Total (CZK)",
+                exportProjectBtn: "GENERAR PROYECTO (JSON)",
+                catalogTitle: "Catálogo de Materiales",
+                loginBtn: "Iniciar Sesión",
+                loginTitle: "Iniciar Sesión",
+                registerTitle: "Registro de Usuario",
+                usernameLabel: "Nombre de usuario",
+                passwordLabel: "Contraseña",
+                noAccountText: "¿No tienes cuenta?",
+                registerSwitchBtn: "Regístrate",
+                hasAccountText: "¿Ya tienes cuenta?",
+                loginSwitchBtn: "Iniciar Sesión"
             }
         };
 
@@ -429,6 +531,7 @@
             return {
                 lang: 'cs',
                 theme: 'dark',
+                currentUser: localStorage.getItem('optipath_user') || null,
                 t(key) {
                     return (translations[this.lang] && translations[this.lang][key]) || translations['cs'][key] || key;
                 }
@@ -445,40 +548,94 @@
 
         function toggleModal(id) {
             const modal = document.getElementById(id);
-            if (modal) {
-                modal.classList.toggle('hidden');
-                if (id === 'ai-modal' && !modal.classList.contains('hidden')) {
-                    generateAIReport();
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        // --- AUTENTIFIKACE (PŘIHLÁŠENÍ / REGISTRACE) ---
+        let isRegisterMode = false;
+
+        function openAuthModal(mode) {
+            isRegisterMode = (mode === 'register');
+            updateAuthModalUI();
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function switchAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            updateAuthModalUI();
+        }
+
+        function updateAuthModalUI() {
+            const alpineData = Alpine.$data(document.body);
+            document.getElementById('auth-title').innerText = isRegisterMode ? alpineData.t('registerTitle') : alpineData.t('loginTitle');
+            document.getElementById('auth-submit-btn').innerText = isRegisterMode ? alpineData.t('registerSwitchBtn') : alpineData.t('loginBtn');
+            document.getElementById('auth-switch-text').innerText = isRegisterMode ? alpineData.t('hasAccountText') : alpineData.t('noAccountText');
+            document.getElementById('auth-switch-btn').innerText = isRegisterMode ? alpineData.t('loginSwitchBtn') : alpineData.t('registerSwitchBtn');
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+            const errorDiv = document.getElementById('auth-error');
+
+            let users = JSON.parse(localStorage.getItem('optipath_users') || '{}');
+
+            if (isRegisterMode) {
+                if (users[username]) {
+                    errorDiv.innerText = "Uživatel již existuje!";
+                    errorDiv.classList.remove('hidden');
+                    return;
                 }
+                users[username] = password;
+                localStorage.setItem('optipath_users', JSON.stringify(users));
+                alert("Registrace proběhla úspěšně! Nyní se můžete přihlásit.");
+                switchAuthMode();
+            } else {
+                if (!users[username] || users[username] !== password) {
+                    errorDiv.innerText = "Nesprávné jméno nebo heslo!";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                localStorage.setItem('optipath_user', username);
+                Alpine.$data(document.body).currentUser = username;
+                closeAuthModal();
             }
+        }
+
+        function logout() {
+            localStorage.removeItem('optipath_user');
+            Alpine.$data(document.body).currentUser = null;
         }
 
         // --- MAPA A GIS LOGIKA ---
         let map;
         let routingControl = null;
         let waypoints = [];
-        let routePolyline = null;
         let houseMarkers = [];
-        let currentMode = 'route'; // 'route' nebo 'house'
+        let currentMode = 'route';
         let totalMeters = 0;
         let connectedHousesCount = 0;
 
-        // Počáteční souřadnice: Velká Polom
         const defaultLat = 49.8655;
         const defaultLng = 18.0822;
 
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([defaultLat, defaultLng], 14);
 
-            // Tmavá dlaždicová mapa (CartoDB Dark Matter)
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                attribution: '&copy; OpenStreetMap & CARTO'
             }).addTo(map);
 
             L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-            // --- PŘIDÁNÍ VYHLEDÁVÁNÍ MĚST, VESNIC A ULIC (Geocoder) ---
+            // Vyhledávání měst, vesnic i ulic
             const geocoder = L.Control.geocoder({
                 defaultMarkGeocode: true,
                 placeholder: 'Hledat město, vesnici, ulici...',
@@ -487,17 +644,12 @@
             }).addTo(map);
 
             geocoder.on('markgeocode', function(e) {
-                const bbox = e.geocode.bbox;
-                const center = e.geocode.center;
-                const name = e.geocode.name;
-                
                 L.popup()
-                    .setLatLng(center)
-                    .setContent(`<div class="mono text-xs text-slate-900"><strong>Nalezeno:</strong><br>${name}</div>`)
+                    .setLatLng(e.geocode.center)
+                    .setContent(`<div class="mono text-xs text-slate-900"><strong>Nalezeno:</strong><br>${e.geocode.name}</div>`)
                     .openOn(map);
             });
 
-            // Kliknutí do mapy
             map.on('click', function(e) {
                 if (currentMode === 'route') {
                     addRoutePoint(e.latlng);
@@ -506,7 +658,6 @@
                 }
             });
 
-            // Výchozí startovací bod ve Velké Polomi
             addRoutePoint(L.latlng(defaultLat, defaultLng));
         }
 
@@ -526,45 +677,29 @@
 
         function addRoutePoint(latlng) {
             waypoints.push(latlng);
-            
-            // Vytvoření vlastního markeru POP / Uzlu
             const customIcon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div style="background-color: #0ea5e9; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #090d16; box-shadow: 0 0 10px #0ea5e9;"></div>`,
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
+                iconSize: [14, 14], iconAnchor: [7, 7]
             });
-
             L.marker(latlng, { icon: customIcon }).addTo(map)
                 .bindTooltip(`<span class="mono">Bod trasy #${waypoints.length}</span>`, { className: 'custom-tooltip', direction: 'top' });
-
             updateRoute();
         }
 
         function updateRoute() {
             if (waypoints.length < 2) return;
-
-            if (routingControl) {
-                map.removeControl(routingControl);
-            }
+            if (routingControl) map.removeControl(routingControl);
 
             routingControl = L.Routing.control({
                 waypoints: waypoints,
-                router: L.Routing.osrmv1({
-                    serviceUrl: 'https://router.project-osrm.org/route/v1'
-                }),
-                lineOptions: {
-                    styles: [{ color: '#38bdf8', opacity: 0.9, weight: 5 }]
-                },
-                addWaypoints: false,
-                draggableWaypoints: false,
-                fitSelectedRoutes: false,
-                show: false
+                router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+                lineOptions: { styles: [{ color: '#38bdf8', opacity: 0.9, weight: 5 }] },
+                addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: false, show: false
             }).addTo(map);
 
             routingControl.on('routesfound', function(e) {
-                const routes = e.routes;
-                totalMeters = routes[0].summary.totalDistance;
+                totalMeters = e.routes[0].summary.totalDistance;
                 updateCalculations();
             });
         }
@@ -574,13 +709,10 @@
             const houseIcon = L.divIcon({
                 className: 'house-div-icon',
                 html: `<div style="background-color: #f59e0b; width: 12px; height: 12px; border-radius: 3px; border: 2px solid #090d16; box-shadow: 0 0 8px #f59e0b;"></div>`,
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
+                iconSize: [12, 12], iconAnchor: [6, 6]
             });
-
             const marker = L.marker(latlng, { icon: houseIcon }).addTo(map)
                 .bindTooltip(`<span class="mono">Budova #${connectedHousesCount} (FTTH)</span>`, { className: 'custom-tooltip', direction: 'top' });
-            
             houseMarkers.push(marker);
             updateCalculations();
         }
@@ -590,28 +722,20 @@
             const excCostPerM = parseFloat(document.getElementById('exc-type').value) || 350;
             const terrainCoeff = parseFloat(document.getElementById('terrain-coeff').value) || 1.0;
 
-            // Aktualizace popisků v selectech
             document.getElementById('lbl-cable-cost').innerText = cableCostPerM + ' Kč/m';
             document.getElementById('lbl-exc-cost').innerText = excCostPerM + ' Kč/m';
             document.getElementById('lbl-terrain-coeff').innerText = terrainCoeff + 'x';
 
             const effectiveMeters = totalMeters * terrainCoeff;
-            const cableTotalPrice = effectiveMeters * cableCostPerM;
-            const excTotalPrice = effectiveMeters * excCostPerM;
-            const houseConnectionPrice = connectedHousesCount * 3500; // paušál za přípojku budovy
-            const grandTotal = cableTotalPrice + excTotalPrice + houseConnectionPrice;
-
-            // Formátování délky
+            const grandTotal = (effectiveMeters * cableCostPerM) + (effectiveMeters * excCostPerM) + (connectedHousesCount * 3500);
             const lengthFormatted = totalMeters > 1000 ? (totalMeters / 1000).toFixed(2) + ' km' : Math.round(totalMeters) + ' m';
             
-            // Zápis do UI panelu
             document.getElementById('res-length').innerText = lengthFormatted;
-            document.getElementById('res-cable-cost').innerText = Math.round(cableTotalPrice).toLocaleString() + ' Kč';
-            document.getElementById('res-exc-cost').innerText = Math.round(excTotalPrice).toLocaleString() + ' Kč';
+            document.getElementById('res-cable-cost').innerText = Math.round(effectiveMeters * cableCostPerM).toLocaleString() + ' Kč';
+            document.getElementById('res-exc-cost').innerText = Math.round(effectiveMeters * excCostPerM).toLocaleString() + ' Kč';
             document.getElementById('res-houses').innerText = connectedHousesCount;
             document.getElementById('res-total').innerText = Math.round(grandTotal).toLocaleString() + ' Kč';
 
-            // Zápis do hlavičky
             document.getElementById('hdr-length').innerText = lengthFormatted;
             document.getElementById('hdr-price').innerText = Math.round(grandTotal).toLocaleString() + ' Kč';
             document.getElementById('hdr-houses').innerText = connectedHousesCount;
@@ -621,84 +745,40 @@
             waypoints = [];
             connectedHousesCount = 0;
             totalMeters = 0;
-            if (routingControl) {
-                map.removeControl(routingControl);
-                routingControl = null;
-            }
+            if (routingControl) { map.removeControl(routingControl); routingControl = null; }
             houseMarkers.forEach(m => map.removeLayer(m));
             houseMarkers = [];
-            
-            // Vyčištění vrstev krome dlaždic
-            map.eachLayer((layer) => {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
-            });
-
+            map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
             updateCalculations();
-            // Znovu přidat výchozí bod Velká Polom
             addRoutePoint(L.latlng(defaultLat, defaultLng));
         }
 
         function exportData() {
             const projectData = {
                 system: "OptiPath AI Enterprise GIS",
-                version: "2.4",
-                date: new Date().toISOString(),
-                location: "Velká Polom",
+                user: Alpine.$data(document.body).currentUser || "Guest",
                 totalMeters: totalMeters,
                 connectedHouses: connectedHousesCount,
-                waypoints: waypoints,
                 totalPrice: document.getElementById('res-total').innerText
             };
-
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "optipath_ftth_project.json");
+            downloadAnchor.setAttribute("download", "optipath_project.json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
         }
 
-        function generateAIReport() {
-            const content = document.getElementById('ai-report-content');
-            const totalCost = document.getElementById('res-total').innerText;
-            const length = document.getElementById('res-length').innerText;
-            
-            content.innerHTML = `
-                <div class="p-3 bg-slate-950 rounded-xl border border-purple-500/30 space-y-2">
-                    <div class="flex items-center gap-2 text-purple-400 font-bold">
-                        <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
-                        <span>AI Topologie & Analýza trasy</span>
-                    </div>
-                    <p class="text-slate-300">Navržená trasa optické sítě má celkovou délku <strong>${length}</strong> a pokrývá <strong>${connectedHousesCount}</strong> připojených objektů v oblasti Velká Polom.</p>
-                    <p class="text-slate-300">Celkový odhadovaný rozpočet projektu činí <strong>${totalCost}</strong> včetně výkopových prací a materiálu.</p>
-                    <div class="text-[11px] text-purple-300/80 mt-2 pt-2 border-t border-slate-800">
-                        ✓ Trasa optimalizovaná po silniční síti OSRM.<br>
-                        ✓ Geokódování ulic a lokalit aktivní.
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- POČÍTADLO NÁVŠTĚVNÍKŮ ---
         function initVisitorCounter() {
             let count = localStorage.getItem('optipath_visitors');
-            if (!count) {
-                count = Math.floor(Math.random() * 50) + 120;
-            } else {
-                count = parseInt(count) + 1;
-            }
+            if (!count) count = Math.floor(Math.random() * 50) + 120;
+            else count = parseInt(count) + 1;
             localStorage.setItem('optipath_visitors', count);
-            
             const vElem = document.getElementById('visitor-count');
-            const hElem = document.getElementById('hdr-visitors');
             if (vElem) vElem.innerText = count;
-            if (hElem) hElem.innerText = count;
         }
 
-        // Spuštění po načtení stránky
         window.onload = function() {
             initMap();
             initVisitorCounter();
