@@ -1,789 +1,853 @@
 <!DOCTYPE html>
-<html lang="cs" x-data="appData()" :class="theme">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptiPath AI Enterprise GIS & FTTH Designer</title>
+    <title>OptiPath Pro - Inženýrský systém GIS</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet Routing Machine CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <!-- Leaflet Control Geocoder CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        #map { height: 100%; width: 100%; z-index: 1; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
-        #splash-screen { transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out; }
-        
-        .leaflet-routing-container { display: none !important; }
-        
-        .custom-tooltip {
-            background-color: #090d16;
-            color: #38bdf8;
-            border: 1px solid #0284c7;
-            border-radius: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            padding: 4px 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        :root {
+            --primary: #0f172a;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #059669;
+            --bg-main: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
         }
 
-        /* Geocoder (vyhledávání) stylování */
-        .leaflet-control-geocoder {
-            border-radius: 12px !important;
-            border: 1px solid #334155 !important;
-            background: #0f172a !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        html, body, #app {
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 64px;
+            min-height: 64px;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.025em;
+        }
+
+        .project-badge {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .toolbar, .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar button, .actions button {
+            background-color: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+        }
+
+        .toolbar button:hover, .actions button:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .toolbar button.active {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 1px 3px 0 rgba(37, 99, 235, 0.3);
+        }
+
+        .actions button.primary {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .actions button.primary:hover {
+            background-color: #047857;
+        }
+
+        /* Main Workspace */
+        .main-content {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: calc(100vh - 64px);
+            position: relative;
             overflow: hidden;
         }
-        .leaflet-control-geocoder-form input {
-            background-color: #0f172a !important;
-            color: #e2e8f0 !important;
-            font-family: 'Inter', sans-serif !important;
-            font-size: 13px !important;
-            padding: 8px 12px !important;
-            height: auto !important;
+
+        /* Sidebar - Elements Library */
+        #sidebar {
+            width: 300px;
+            min-width: 300px;
+            background-color: #ffffff;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            height: 100%;
         }
-        .leaflet-control-geocoder-form input::placeholder { color: #64748b; }
-        .leaflet-control-geocoder-icon {
-            background-color: #0ea5e9 !important;
-            border-radius: 8px !important;
-            width: 32px !important;
-            height: 32px !important;
-            margin: 4px !important;
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--primary);
+            background: #ffffff;
+            font-size: 0.9rem;
+            letter-spacing: -0.01em;
         }
-        .leaflet-control-geocoder-expanded { width: 300px !important; }
-        .leaflet-control-geocoder-results {
-            background: #0f172a !important;
-            border-top: 1px solid #334155 !important;
-            border-radius: 0 0 12px 12px !important;
+
+        .sidebar-body {
+            padding: 12px;
+            overflow-y: auto;
+            flex: 1;
         }
-        .leaflet-control-geocoder-result { border-bottom: 1px solid #1e293b !important; }
-        .leaflet-control-geocoder-result:hover { background: #1e293b !important; }
-        .leaflet-control-geocoder-result a { color: #cbd5e1 !important; font-size: 12px !important; padding: 8px 12px !important; }
+
+        .category-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin: 16px 0 8px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .lib-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+        }
+
+        .lib-item:hover {
+            border-color: var(--accent);
+            background: #eff6ff;
+            transform: translateX(2px);
+        }
+
+        .lib-item span:last-child {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* Map Container */
+        #map-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Right Panel - Statistics */
+        #info-panel {
+            width: 320px;
+            min-width: 320px;
+            background-color: #ffffff;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            height: 100%;
+        }
+
+        .info-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--primary);
+            background: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .info-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+        }
+
+        .stat-row strong {
+            color: var(--text-main);
+        }
+
+        .stat-row.total {
+            font-weight: 600;
+            color: var(--success);
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+            margin-top: 12px;
+            font-size: 0.95rem;
+        }
+
+        .elements-list {
+            list-style: none;
+            margin-top: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px;
+            background: #f8fafc;
+        }
+
+        .elements-list li {
+            font-size: 0.8rem;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .elements-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            width: 650px;
+            max-height: 85vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalFadeIn 0.2s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #f8fafc;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.15s;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .report-section {
+            margin-bottom: 20px;
+        }
+
+        .report-section h4 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 4px;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen flex flex-col overflow-hidden">
+<body>
+    <div id="app">
+        <!-- Top Navigation Bar -->
+        <header class="top-bar">
+            <div class="logo-area">
+                <span class="logo">⚡ OptiPath Pro</span>
+                <span class="project-badge">Projekt: <strong id="proj-name">Inženýrská trasa CZ</strong></span>
+            </div>
+            <div class="toolbar">
+                <button id="btn-main-branch" class="active" title="Kreslit hlavní optickou trasu">🔌 Hlavní větev</button>
+                <button id="btn-sub-branch" title="Kreslit vedlejší uličky a přípojky">🛣️ Uličky / Přípojky</button>
+                <button id="btn-place" title="Umístit prvek (budovu, šachtu)">📍 Vkládat prvek</button>
+                <button id="btn-clear" title="Smazat vše">🗑️ Vyčistit</button>
+            </div>
+            <div class="actions">
+                <button id="btn-auth" title="Přihlášení uživatele">👤 Přihlásit se</button>
+                <button id="btn-share" title="Sdílet projekt s přáteli">🔗 Sdílet</button>
+                <button id="btn-report" class="primary" title="Generovat kompletní technickou zprávu">📄 Odborná zpráva</button>
+                <button id="btn-export" title="Uložit projekt">💾 Uložit / Export</button>
+            </div>
+        </header>
 
-    <!-- ================= 1. ÚVODNÍ INTRO (SPLASH SCREEN) ================= -->
-    <div id="splash-screen" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center bg-cover bg-center" 
-         style="background-image: linear-gradient(to bottom, rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.98)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000&auto=format&fit=crop');">
-        
-        <div class="relative z-10 max-w-2xl bg-slate-950/85 backdrop-blur-xl p-10 rounded-3xl border border-slate-800 shadow-2xl">
-            <div class="inline-block p-4 bg-cyan-500/20 border border-cyan-500/40 rounded-2xl mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-                <svg class="w-14 h-14 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-            </div>
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 bg-clip-text text-transparent">
-                OptiPath AI Enterprise
-            </h1>
-            <p class="text-slate-300 text-sm md:text-base mb-8 leading-relaxed" x-text="t('splashDesc')"></p>
-            
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button onclick="closeSplash()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-base font-bold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all transform hover:-translate-y-0.5 cursor-pointer" x-text="t('enterMap')">
-                </button>
-                
-                <select x-model="lang" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-4 py-4 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                    <option value="cs">Čeština</option>
-                    <option value="en">English</option>
-                    <option value="de">Deutsch</option>
-                    <option value="fr">Français</option>
-                    <option value="es">Español</option>
-                </select>
-            </div>
-            <div class="mt-8 text-xs text-slate-500 mono flex flex-wrap items-center justify-center gap-4">
-                <div class="flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    <span x-text="t('systemOnline')"></span>
+        <!-- Main Workspace -->
+        <div class="main-content">
+            <!-- Left Panel - Elements Library -->
+            <aside id="sidebar">
+                <div class="sidebar-header">
+                    <span>📚 Knihovna prvků & Budov</span>
                 </div>
-                <div>👤 <span x-text="t('visitorsLabel')"></span>: <strong class="text-cyan-400" id="visitor-count">Načítám...</strong></div>
-            </div>
-        </div>
-    </div>
+                <div class="sidebar-body" id="library-container">
+                    <div class="category-title">Budovy & Objekty</div>
+                    <div class="lib-item" data-type="house" data-name="Rodinný dům / Přípojka" data-price="3500">
+                        <span>🏠 Rodinný dům (FTTH)</span><span>3 500 Kč</span>
+                    </div>
+                    <div class="lib-item" data-type="building" data-name="Bytový dům / Komerční obj." data-price="12000">
+                        <span>🏢 Bytový dům / Blok</span><span>12 000 Kč</span>
+                    </div>
+                    
+                    <div class="category-title">Šachty & Komory</div>
+                    <div class="lib-item" data-type="shaft" data-name="Kabelová šachta S1" data-price="1500">
+                        <span>🕳️ Kabelová šachta S1</span><span>1 500 Kč</span>
+                    </div>
+                    <div class="lib-item" data-type="chamber" data-name="Distribuční komora D2" data-price="4500">
+                        <span>📦 Distribuční komora D2</span><span>4 500 Kč</span>
+                    </div>
 
-    <!-- ================= 2. HLAVNÍ NAVIGACE ================= -->
-    <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0 z-20 shadow-md">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-cyan-500/10 border border-cyan-500/30 rounded-xl flex items-center justify-center text-cyan-400 font-bold">
-                OP
-            </div>
-            <div>
-                <h2 class="font-bold text-base tracking-wide flex items-center gap-2">
-                    OptiPath <span class="text-[10px] px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded-full font-normal">AI ENTERPRISE</span>
-                </h2>
-                <p class="text-[11px] text-slate-400" x-text="t('navSubtitle')"></p>
-            </div>
-        </div>
-
-        <div class="hidden lg:flex items-center space-x-4 text-xs">
-            <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400" x-text="t('totalLength') + ':'"></span> <span id="hdr-length" class="text-cyan-400 font-bold mono ml-1">0.00 m</span>
-            </div>
-            <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400" x-text="t('estPrice') + ':'"></span> <span id="hdr-price" class="text-emerald-400 font-bold mono ml-1">0 Kč</span>
-            </div>
-            <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400" x-text="t('connectedHouses') + ':'"></span> <span id="hdr-houses" class="text-amber-400 font-bold mono ml-1">0</span>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-3">
-            <!-- Výběr jazyků -->
-            <select x-model="lang" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                <option value="cs">Čeština</option>
-                <option value="en">English</option>
-                <option value="de">Deutsch</option>
-                <option value="fr">Français</option>
-                <option value="es">Español</option>
-            </select>
-
-            <!-- Tlačítko přihlášení / profilu -->
-            <template x-if="!currentUser">
-                <button onclick="openAuthModal('login')" class="px-3 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                    <span x-text="t('loginBtn')"></span>
-                </button>
-            </template>
-            <template x-if="currentUser">
-                <div class="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="text-slate-200 font-semibold" x-text="currentUser"></span>
-                    <button @click="logout()" class="ml-2 text-rose-400 hover:text-rose-300 font-bold cursor-pointer" title="Odhlásit">&times;</button>
-                </div>
-            </template>
-
-            <button onclick="toggleModal('library-modal')" class="hidden sm:flex px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition items-center gap-1.5 cursor-pointer">
-                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                <span x-text="t('catalogBtn')"></span>
-            </button>
-            <button onclick="exportData()" class="hidden md:flex px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-semibold rounded-xl transition items-center gap-1.5 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                <span x-text="t('exportBtn')"></span>
-            </button>
-            <button onclick="clearMap()" class="px-2.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-xl transition cursor-pointer" title="Reset">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
-        </div>
-    </header>
-
-    <!-- ================= 3. HLAVNÍ OBSAH (MAPA + PANEL) ================= -->
-    <div class="flex-1 flex overflow-hidden relative">
-        
-        <!-- Levý ovládací panel -->
-        <aside class="w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-10 shadow-2xl overflow-y-auto">
-            
-            <!-- Režim kreslení -->
-            <div class="p-5 border-b border-slate-800">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
-                    <span x-text="t('drawModeTitle')"></span>
-                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                </h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="setMode('route')" id="btn-mode-route" class="px-3 py-2.5 bg-cyan-500/20 border border-cyan-500 text-cyan-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                        <span x-text="t('modeRoute')"></span>
-                    </button>
-                    <button onclick="setMode('house')" id="btn-mode-house" class="px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition hover:bg-slate-700 cursor-pointer">
-                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                        <span x-text="t('modeHouse')"></span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Parametry sítě -->
-            <div class="p-5 border-b border-slate-800 space-y-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400" x-text="t('networkParams')"></h3>
-                
-                <div>
-                    <label class="text-xs text-slate-300 block mb-1.5 flex justify-between">
-                        <span x-text="t('cableType')"></span>
-                        <span class="text-cyan-400 mono text-[11px]" id="lbl-cable-cost">45 Kč/m</span>
-                    </label>
-                    <select id="cable-type" onchange="updateCalculations()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                        <option value="45">FTTH 24F Microduct (45 Kč/m)</option>
-                        <option value="75">Direct Burial Armored 48F (75 Kč/m)</option>
-                        <option value="120">Enterprise Backbone 144F (120 Kč/m)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="text-xs text-slate-300 block mb-1.5 flex justify-between">
-                        <span x-text="t('excavationType')"></span>
-                        <span class="text-emerald-400 mono text-[11px]" id="lbl-exc-cost">350 Kč/m</span>
-                    </label>
-                    <select id="exc-type" onchange="updateCalculations()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                        <option value="350">Standard Trenching (350 Kč/m)</option>
-                        <option value="150">Microtrenching 10cm (150 Kč/m)</option>
-                        <option value="850">Directional Boring / HDD (850 Kč/m)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="text-xs text-slate-300 block mb-1.5 flex justify-between">
-                        <span x-text="t('terrainType')"></span>
-                        <span class="text-amber-400 mono text-[11px]" id="lbl-terrain-coeff">1.0x</span>
-                    </label>
-                    <select id="terrain-coeff" onchange="updateCalculations()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                        <option value="1.0">Greenfield / Tráva (1.0x)</option>
-                        <option value="1.3">Asphalt / Chodník (+30% práce)</option>
-                        <option value="1.6">Rocky / Skalnatý podklad (+60%)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Živý rozpočet -->
-            <div class="p-5 bg-slate-950/50 flex-1 flex flex-col justify-between">
-                <div>
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3" x-text="t('liveBudgetTitle')"></h3>
-                    <div class="space-y-2 text-xs">
-                        <div class="flex justify-between py-1 border-b border-slate-800/60">
-                            <span class="text-slate-400" x-text="t('cableLength')"></span>
-                            <span id="res-length" class="text-cyan-400 mono font-bold">0.00 m</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-slate-800/60">
-                            <span class="text-slate-400" x-text="t('cablePrice')"></span>
-                            <span id="res-cable-cost" class="text-slate-200 mono">0 Kč</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-slate-800/60">
-                            <span class="text-slate-400" x-text="t('excavationPrice')"></span>
-                            <span id="res-exc-cost" class="text-slate-200 mono">0 Kč</span>
-                        </div>
-                        <div class="flex justify-between py-1 border-b border-slate-800/60">
-                            <span class="text-slate-400" x-text="t('connectedHouses')"></span>
-                            <span id="res-houses" class="text-amber-400 mono font-bold">0</span>
-                        </div>
+                    <div class="category-title">Aktivní prvky</div>
+                    <div class="lib-item" data-type="splitter" data-name="Optický rozbočovač (Splitter)" data-price="2800">
+                        <span>⚙️ Optický rozbočovač</span><span>2 800 Kč</span>
+                    </div>
+                    <div class="lib-item" data-type="amplifier" data-name="Zesilovač / Uzol" data-price="6500">
+                        <span>⚡ Síťový uzol / Zesilovač</span><span>6 500 Kč</span>
                     </div>
                 </div>
+            </aside>
 
-                <div class="mt-6 pt-4 border-t border-slate-800">
-                    <div class="flex justify-between items-baseline mb-3">
-                        <span class="text-xs font-bold text-slate-300 uppercase" x-text="t('totalPrice')"></span>
-                        <span id="res-total" class="text-lg font-extrabold text-emerald-400 mono">0 Kč</span>
-                    </div>
-                    <button onclick="exportData()" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-bold rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.3)] transition cursor-pointer" x-text="t('exportProjectBtn')">
-                    </button>
-                </div>
+            <!-- Map Area -->
+            <div id="map-container">
+                <div id="map"></div>
             </div>
 
-        </aside>
-
-        <!-- Hlavní plocha s mapou -->
-        <main class="flex-1 relative">
-            <div id="map"></div>
-        </main>
+            <!-- Right Panel - Statistics & Budget -->
+            <aside id="info-panel">
+                <div class="info-header">📊 Parametry trasy & Rozpočet</div>
+                <div class="info-body">
+                    <div class="stat-row"><span>Hlavní větev:</span> <strong id="val-main-len">0.0 m</strong></div>
+                    <div class="stat-row"><span>Uličky / Přípojky:</span> <strong id="val-sub-len">0.0 m</strong></div>
+                    <div class="stat-row"><span>Rezerva kabelu (10%):</span> <strong id="val-reserve">0.0 m</strong></div>
+                    <div class="stat-row total"><span>Celková délka kabelů:</span> <strong id="val-total">0.0 m</strong></div>
+                    
+                    <hr style="margin: 16px 0; border:none; border-top:1px solid var(--border);">
+                    
+                    <div class="stat-row"><span>Cena kabelů (45 Kč/m):</span> <strong id="val-price-cables">0 Kč</strong></div>
+                    <div class="stat-row"><span>Cena prvků a budov:</span> <strong id="val-price-items">0 Kč</strong></div>
+                    <div class="stat-row total"><span>Celkové náklady:</span> <strong id="val-price-total">0 Kč</strong></div>
+                    
+                    <div style="margin-top: 18px; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Umístěné prvky:</div>
+                    <ul class="elements-list" id="placed-list">
+                        <li style="color:#94a3b8; text-align:center; padding:12px;">Zatím nebyly vloženy žádné prvky</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
     </div>
 
-    <!-- ================= MODÁLNÍ OKNA ================= -->
-    
-    <!-- Přihlášení / Registrace MODAL -->
-    <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-                <h3 class="text-base font-bold text-cyan-400" id="auth-title" x-text="t('loginTitle')"></h3>
-                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-100 text-xl font-bold cursor-pointer">&times;</button>
+    <!-- Report Modal -->
+    <div class="modal-overlay" id="report-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>📄 Oficiální Inženýrská a Technická Zpráva</span>
+                <button class="close-btn" id="modal-close">&times;</button>
             </div>
-            
-            <form onsubmit="handleAuthSubmit(event)" class="space-y-4 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1" x-text="t('usernameLabel')"></label>
-                    <input type="text" id="auth-username" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1" x-text="t('passwordLabel')"></label>
-                    <input type="password" id="auth-password" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
-                </div>
-                
-                <div id="auth-error" class="text-rose-400 hidden"></div>
-
-                <button type="submit" class="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition cursor-pointer" id="auth-submit-btn" x-text="t('loginBtn')"></button>
-            </form>
-
-            <div class="mt-4 text-center text-[11px] text-slate-400">
-                <span id="auth-switch-text" x-text="t('noAccountText')"></span>
-                <button type="button" onclick="switchAuthMode()" class="text-cyan-400 font-semibold ml-1 hover:underline cursor-pointer" id="auth-switch-btn" x-text="t('registerSwitchBtn')"></button>
+            <div class="modal-body" id="report-content">
+                Načítání zprávy...
+            </div>
+            <div class="modal-footer">
+                <button id="btn-print-report" class="primary">🖨️ Tisk / Uložit do PDF</button>
             </div>
         </div>
     </div>
 
-    <!-- Katalog prvků -->
-    <div id="library-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl relative">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    <span x-text="t('catalogTitle')"></span>
-                </h3>
-                <button onclick="toggleModal('library-modal')" class="text-slate-400 hover:text-slate-100 text-xl font-bold cursor-pointer">&times;</button>
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-content" style="width: 400px; max-height: none;">
+            <div class="modal-header">
+                <span>👤 Uživatelský účet OptiPath</span>
+                <button class="close-btn" id="auth-close">&times;</button>
             </div>
-            <div class="space-y-3 text-xs text-slate-300 max-h-96 overflow-y-auto pr-2">
-                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <strong class="text-cyan-400">FTTH 24F Microduct</strong>: Vhodné pro zafukování do mikrotrubiček. Nízká hmotnost, vysoká odolnost.
-                </div>
-                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <strong class="text-cyan-400">Direct Burial Armored 48F</strong>: Pancéřovaný kabel odolný proti hlodavcům a přímému uložení do země.
-                </div>
-                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <strong class="text-cyan-400">Enterprise Backbone 144F</strong>: Páteřní vysokokapacitní optický kabel pro propojení uzlů.
-                </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 12px; font-size: 0.9rem; color: var(--text-muted);">Přihlaste se pro synchronizaci projektů v cloudu:</p>
+                <input type="text" id="username-input" placeholder="Zadejte uživatelské jméno" style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 0.9rem;">
+                <button id="btn-login-save" class="primary" style="width: 100%; padding: 10px; border-radius: 6px; font-weight: 500; cursor: pointer;">Přihlásit se</button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript knihovny -->
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JS -->
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <!-- Leaflet Geocoder JS -->
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
+    
+    <!-- JavaScript logika -->
     <script>
-        // --- VÍCEJAZYČNÁ PODPORA (5 JAZYKŮ) ---
-        const translations = {
-            cs: {
-                splashDesc: "Profesionální GIS systém pro návrh optických FTTH sítí, trasování po silnicích a automatický rozpočet.",
-                enterMap: "VSTOUPIT DO MAPY & DESIGNÉRU",
-                systemOnline: "GIS systém online & připraven",
-                visitorsLabel: "Návštěvníci",
-                navSubtitle: "FTTH Route Designer & GIS Workspace",
-                totalLength: "Délka trasy",
-                estPrice: "Odhad ceny",
-                connectedHouses: "Připojené budovy",
-                catalogBtn: "Katalog",
-                exportBtn: "Export",
-                drawModeTitle: "Režim kreslení",
-                modeRoute: "Trasa (silnice)",
-                modeHouse: "Budova / POP",
-                networkParams: "Parametry sítě",
-                cableType: "Typ optického kabelu",
-                excavationType: "Typ výkopových prací",
-                terrainType: "Koeficient terénu",
-                liveBudgetTitle: "Živý rozpočet projektu",
-                cableLength: "Délka kabelu",
-                cablePrice: "Cena kabelu",
-                excavationPrice: "Cena výkopů",
-                totalPrice: "Celková cena (CZK)",
-                exportProjectBtn: "VYGENEROVAT PROJEKT (JSON)",
-                catalogTitle: "Katalog materiálů a prvků",
-                loginBtn: "Přihlásit se",
-                loginTitle: "Přihlášení do systému",
-                registerTitle: "Registrace nového uživatele",
-                usernameLabel: "Uživatelské jméno",
-                passwordLabel: "Heslo",
-                noAccountText: "Nemáte účet?",
-                registerSwitchBtn: "Zaregistrovat se",
-                hasAccountText: "Již máte účet?",
-                loginSwitchBtn: "Přihlásit se"
-            },
-            en: {
-                splashDesc: "Professional GIS system for optical FTTH network design, road routing, and automated cost estimation.",
-                enterMap: "ENTER MAP & DESIGNER",
-                systemOnline: "GIS system online & ready",
-                visitorsLabel: "Visitors",
-                navSubtitle: "FTTH Route Designer & GIS Workspace",
-                totalLength: "Route Length",
-                estPrice: "Est. Price",
-                connectedHouses: "Connected Buildings",
-                catalogBtn: "Catalog",
-                exportBtn: "Export",
-                drawModeTitle: "Drawing Mode",
-                modeRoute: "Route (Roads)",
-                modeHouse: "Building / POP",
-                networkParams: "Network Parameters",
-                cableType: "Optical Cable Type",
-                excavationType: "Excavation Type",
-                terrainType: "Terrain Coefficient",
-                liveBudgetTitle: "Live Project Budget",
-                cableLength: "Cable Length",
-                cablePrice: "Cable Cost",
-                excavationPrice: "Excavation Cost",
-                totalPrice: "Total Cost (CZK)",
-                exportProjectBtn: "GENERATE PROJECT (JSON)",
-                catalogTitle: "Material & Component Catalog",
-                loginBtn: "Sign In",
-                loginTitle: "System Login",
-                registerTitle: "New User Registration",
-                usernameLabel: "Username",
-                passwordLabel: "Password",
-                noAccountText: "Don't have an account?",
-                registerSwitchBtn: "Register",
-                hasAccountText: "Already have an account?",
-                loginSwitchBtn: "Sign In"
-            },
-            de: {
-                splashDesc: "Professionelles GIS-System für FTTH-Glasfasernetz-Design, Straßenrouting und automatisierte Kostenkalkulation.",
-                enterMap: "KARTE & DESIGNER BETRETEN",
-                systemOnline: "GIS-System online & bereit",
-                visitorsLabel: "Besucher",
-                navSubtitle: "FTTH Route Designer & GIS Workspace",
-                totalLength: "Trassenlänge",
-                estPrice: "Gesch. Preis",
-                connectedHouses: "Verbundene Gebäude",
-                catalogBtn: "Katalog",
-                exportBtn: "Export",
-                drawModeTitle: "Zeichenmodus",
-                modeRoute: "Trasse (Straßen)",
-                modeHouse: "Gebäude / POP",
-                networkParams: "Netzwerkparameter",
-                cableType: "Glasfaserkabeltyp",
-                excavationType: "Aushubart",
-                terrainType: "Geländekoeffizient",
-                liveBudgetTitle: "Live-Projektbudget",
-                cableLength: "Kabellänge",
-                cablePrice: "Kosten Kabel",
-                excavationPrice: "Kosten Aushub",
-                totalPrice: "Gesamtkosten (CZK)",
-                exportProjectBtn: "PROJEKT GENERIEREN (JSON)",
-                catalogTitle: "Material- und Komponenten-Katalog",
-                loginBtn: "Anmelden",
-                loginTitle: "System-Anmeldung",
-                registerTitle: "Neuartige Registrierung",
-                usernameLabel: "Benutzername",
-                passwordLabel: "Passwort",
-                noAccountText: "Kein Konto?",
-                registerSwitchBtn: "Registrieren",
-                hasAccountText: "Bereits ein Konto?",
-                loginSwitchBtn: "Anmelden"
-            },
-            fr: {
-                splashDesc: "Système SIG professionnel pour la conception de réseaux optiques FTTH, routage routier et estimation des coûts.",
-                enterMap: "ENTRER DANS LA CARTE",
-                systemOnline: "Système SIG en ligne & prêt",
-                visitorsLabel: "Visiteurs",
-                navSubtitle: "FTTH Route Designer & GIS Workspace",
-                totalLength: "Longueur",
-                estPrice: "Prix Est.",
-                connectedHouses: "Bâtiments",
-                catalogBtn: "Catalogue",
-                exportBtn: "Exporter",
-                drawModeTitle: "Mode de Dessin",
-                modeRoute: "Tracé (Routes)",
-                modeHouse: "Bâtiment / POP",
-                networkParams: "Paramètres Réseau",
-                cableType: "Type de Câble",
-                excavationType: "Type de Terrassement",
-                terrainType: "Coefficient de Terrain",
-                liveBudgetTitle: "Budget en Direct",
-                cableLength: "Longueur Câble",
-                cablePrice: "Coût Câble",
-                excavationPrice: "Coût Terrassement",
-                totalPrice: "Coût Total (CZK)",
-                exportProjectBtn: "GÉNÉRER PROJET (JSON)",
-                catalogTitle: "Catalogue des Matériaux",
-                loginBtn: "Connexion",
-                loginTitle: "Connexion au Système",
-                registerTitle: "Créer un Compte",
-                usernameLabel: "Nom d'utilisateur",
-                passwordLabel: "Mot de passe",
-                noAccountText: "Pas de compte ?",
-                registerSwitchBtn: "S'inscrire",
-                hasAccountText: "Déjà un compte ?",
-                loginSwitchBtn: "Connexion"
-            },
-            es: {
-                splashDesc: "Sistema SIG profesional para diseño de redes ópticas FTTH, enrutamiento vial y estimación de costos.",
-                enterMap: "ENTRAR AL MAPA",
-                systemOnline: "Sistema SIG en línea y listo",
-                visitorsLabel: "Visitantes",
-                navSubtitle: "FTTH Route Designer & GIS Workspace",
-                totalLength: "Longitud",
-                estPrice: "Precio Est.",
-                connectedHouses: "Edificios Conectados",
-                catalogBtn: "Catálogo",
-                exportBtn: "Exportar",
-                drawModeTitle: "Modo de Dibujo",
-                modeRoute: "Ruta (Carreteras)",
-                modeHouse: "Edificio / POP",
-                networkParams: "Parámetros de Red",
-                cableType: "Tipo de Cable",
-                excavationType: "Tipo de Excavación",
-                terrainType: "Coeficiente de Terreno",
-                liveBudgetTitle: "Presupuesto en Vivo",
-                cableLength: "Longitud de Cable",
-                cablePrice: "Costo de Cable",
-                excavationPrice: "Costo de Excavación",
-                totalPrice: "Costo Total (CZK)",
-                exportProjectBtn: "GENERAR PROYECTO (JSON)",
-                catalogTitle: "Catálogo de Materiales",
-                loginBtn: "Iniciar Sesión",
-                loginTitle: "Iniciar Sesión",
-                registerTitle: "Registro de Usuario",
-                usernameLabel: "Nombre de usuario",
-                passwordLabel: "Contraseña",
-                noAccountText: "¿No tienes cuenta?",
-                registerSwitchBtn: "Regístrate",
-                hasAccountText: "¿Ya tienes cuenta?",
-                loginSwitchBtn: "Iniciar Sesión"
-            }
-        };
+        const map = L.map('map').setView([49.8175, 15.4730], 8);
 
-        function appData() {
-            return {
-                lang: 'cs',
-                theme: 'dark',
-                currentUser: localStorage.getItem('optipath_user') || null,
-                t(key) {
-                    return (translations[this.lang] && translations[this.lang][key]) || translations['cs'][key] || key;
-                }
-            }
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap přispěvatelé'
+        }).addTo(map);
+
+        L.Control.geocoder({
+            defaultMarkGeocoder: true,
+            placeholder: 'Hledat město, ulici, adresu...',
+            errorMessage: 'Město nebo adresa nebyla nalezena.'
+        }).addTo(map);
+
+        let mode = 'main-branch';
+        let selectedTemplate = null;
+
+        let mainWaypoints = [];
+        let subWaypoints = [];
+        let mainRoutingControl = null;
+        let subRoutingControl = null;
+
+        let placedItems = [];
+        const markersGroup = L.layerGroup().addTo(map);
+
+        const CABLE_PRICE_PER_METER = 45;
+        let currentUser = localStorage.getItem('optipath_user') || 'Host';
+
+        if (currentUser !== 'Host') {
+            const btnAuth = document.getElementById('btn-auth');
+            if (btnAuth) btnAuth.textContent = `👤 ${currentUser}`;
         }
 
-        function closeSplash() {
-            const splash = document.getElementById('splash-screen');
-            if (splash) {
-                splash.style.opacity = '0';
-                splash.style.visibility = 'hidden';
-            }
+        document.getElementById('btn-main-branch').addEventListener('click', (e) => {
+            mode = 'main-branch';
+            selectedTemplate = null;
+            setActiveToolbar(e.target);
+        });
+
+        document.getElementById('btn-sub-branch').addEventListener('click', (e) => {
+            mode = 'sub-branch';
+            selectedTemplate = null;
+            setActiveToolbar(e.target);
+        });
+
+        document.getElementById('btn-place').addEventListener('click', (e) => {
+            mode = 'place';
+            setActiveToolbar(e.target);
+        });
+
+        function setActiveToolbar(btn) {
+            document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        function toggleModal(id) {
-            const modal = document.getElementById(id);
-            if (modal) modal.classList.toggle('hidden');
-        }
-
-        // --- AUTENTIFIKACE (PŘIHLÁŠENÍ / REGISTRACE) ---
-        let isRegisterMode = false;
-
-        function openAuthModal(mode) {
-            isRegisterMode = (mode === 'register');
-            updateAuthModalUI();
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-error').classList.add('hidden');
-        }
-
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-        }
-
-        function switchAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            updateAuthModalUI();
-        }
-
-        function updateAuthModalUI() {
-            const alpineData = Alpine.$data(document.body);
-            document.getElementById('auth-title').innerText = isRegisterMode ? alpineData.t('registerTitle') : alpineData.t('loginTitle');
-            document.getElementById('auth-submit-btn').innerText = isRegisterMode ? alpineData.t('registerSwitchBtn') : alpineData.t('loginBtn');
-            document.getElementById('auth-switch-text').innerText = isRegisterMode ? alpineData.t('hasAccountText') : alpineData.t('noAccountText');
-            document.getElementById('auth-switch-btn').innerText = isRegisterMode ? alpineData.t('loginSwitchBtn') : alpineData.t('registerSwitchBtn');
-        }
-
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            const username = document.getElementById('auth-username').value.trim();
-            const password = document.getElementById('auth-password').value.trim();
-            const errorDiv = document.getElementById('auth-error');
-
-            let users = JSON.parse(localStorage.getItem('optipath_users') || '{}');
-
-            if (isRegisterMode) {
-                if (users[username]) {
-                    errorDiv.innerText = "Uživatel již existuje!";
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                users[username] = password;
-                localStorage.setItem('optipath_users', JSON.stringify(users));
-                alert("Registrace proběhla úspěšně! Nyní se můžete přihlásit.");
-                switchAuthMode();
-            } else {
-                if (!users[username] || users[username] !== password) {
-                    errorDiv.innerText = "Nesprávné jméno nebo heslo!";
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                localStorage.setItem('optipath_user', username);
-                Alpine.$data(document.body).currentUser = username;
-                closeAuthModal();
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('optipath_user');
-            Alpine.$data(document.body).currentUser = null;
-        }
-
-        // --- MAPA A GIS LOGIKA ---
-        let map;
-        let routingControl = null;
-        let waypoints = [];
-        let houseMarkers = [];
-        let currentMode = 'route';
-        let totalMeters = 0;
-        let connectedHousesCount = 0;
-
-        const defaultLat = 49.8655;
-        const defaultLng = 18.0822;
-
-        function initMap() {
-            map = L.map('map', { zoomControl: false }).setView([defaultLat, defaultLng], 14);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap & CARTO'
-            }).addTo(map);
-
-            L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-            // Vyhledávání měst, vesnic i ulic
-            const geocoder = L.Control.geocoder({
-                defaultMarkGeocode: true,
-                placeholder: 'Hledat město, vesnici, ulici...',
-                errorMessage: 'Místo nebylo nalezeno.',
-                geocoder: L.Control.Geocoder.nominatim()
-            }).addTo(map);
-
-            geocoder.on('markgeocode', function(e) {
-                L.popup()
-                    .setLatLng(e.geocode.center)
-                    .setContent(`<div class="mono text-xs text-slate-900"><strong>Nalezeno:</strong><br>${e.geocode.name}</div>`)
-                    .openOn(map);
+        document.querySelectorAll('.lib-item').forEach(item => {
+            item.addEventListener('click', () => {
+                selectedTemplate = {
+                    type: item.dataset.type,
+                    name: item.dataset.name,
+                    price: parseInt(item.dataset.price)
+                };
+                mode = 'place';
+                document.getElementById('btn-place').classList.add('active');
+                document.querySelectorAll('.toolbar button').forEach(b => {
+                    if (b.id !== 'btn-place') b.classList.remove('active');
+                });
             });
+        });
 
-            map.on('click', function(e) {
-                if (currentMode === 'route') {
-                    addRoutePoint(e.latlng);
-                } else if (currentMode === 'house') {
-                    addHouseMarker(e.latlng);
+        map.on('click', function(e) {
+            const latLng = L.latLng(e.latlng.lat, e.latlng.lng);
+
+            if (mode === 'main-branch') {
+                mainWaypoints.push(latLng);
+                updateMainRouting();
+            } else if (mode === 'sub-branch') {
+                subWaypoints.push(latLng);
+                updateSubRouting();
+            } else if (mode === 'place' && selectedTemplate) {
+                placedItems.push({
+                    lat: latLng.lat,
+                    lng: latLng.lng,
+                    name: selectedTemplate.name,
+                    type: selectedTemplate.type,
+                    price: selectedTemplate.price
+                });
+                renderPlacedItems();
+                updatePlacedListUI();
+                updateStats();
+            }
+        });
+
+        function updateMainRouting() {
+            if (mainWaypoints.length < 2) {
+                if (mainRoutingControl) {
+                    map.removeControl(mainRoutingControl);
+                    mainRoutingControl = null;
                 }
-            });
-
-            addRoutePoint(L.latlng(defaultLat, defaultLng));
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            const btnRoute = document.getElementById('btn-mode-route');
-            const btnHouse = document.getElementById('btn-mode-house');
+                updateStats(0, null);
+                return;
+            }
             
-            if (mode === 'route') {
-                btnRoute.className = "px-3 py-2.5 bg-cyan-500/20 border border-cyan-500 text-cyan-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer";
-                btnHouse.className = "px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition hover:bg-slate-700 cursor-pointer";
-            } else {
-                btnHouse.className = "px-3 py-2.5 bg-amber-500/20 border border-amber-500 text-amber-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer";
-                btnRoute.className = "px-3 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition hover:bg-slate-700 cursor-pointer";
+            if (mainRoutingControl) {
+                map.removeControl(mainRoutingControl);
             }
-        }
 
-        function addRoutePoint(latlng) {
-            waypoints.push(latlng);
-            const customIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div style="background-color: #0ea5e9; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #090d16; box-shadow: 0 0 10px #0ea5e9;"></div>`,
-                iconSize: [14, 14], iconAnchor: [7, 7]
-            });
-            L.marker(latlng, { icon: customIcon }).addTo(map)
-                .bindTooltip(`<span class="mono">Bod trasy #${waypoints.length}</span>`, { className: 'custom-tooltip', direction: 'top' });
-            updateRoute();
-        }
-
-        function updateRoute() {
-            if (waypoints.length < 2) return;
-            if (routingControl) map.removeControl(routingControl);
-
-            routingControl = L.Routing.control({
-                waypoints: waypoints,
+            mainRoutingControl = L.Routing.control({
+                waypoints: mainWaypoints,
                 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
-                lineOptions: { styles: [{ color: '#38bdf8', opacity: 0.9, weight: 5 }] },
-                addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: false, show: false
+                lineOptions: {
+                    styles: [{ color: '#2563eb', weight: 6, opacity: 0.9 }]
+                },
+                show: false,
+                addWaypoints: false,
+                fitSelectedRoutes: false,
+                createMarker: (i, wp) => L.marker(wp.latLng, {
+                    icon: L.divIcon({
+                        className: 'custom-pin',
+                        html: `<div style="background:#2563eb;color:white;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-weight:600;font-size:11px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);">M${i+1}</div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    })
+                })
             }).addTo(map);
 
-            routingControl.on('routesfound', function(e) {
-                totalMeters = e.routes[0].summary.totalDistance;
-                updateCalculations();
+            mainRoutingControl.on('routesfound', function(e) {
+                const dist = e.routes[0].summary.totalDistance;
+                updateStats(dist, null);
             });
         }
 
-        function addHouseMarker(latlng) {
-            connectedHousesCount++;
-            const houseIcon = L.divIcon({
-                className: 'house-div-icon',
-                html: `<div style="background-color: #f59e0b; width: 12px; height: 12px; border-radius: 3px; border: 2px solid #090d16; box-shadow: 0 0 8px #f59e0b;"></div>`,
-                iconSize: [12, 12], iconAnchor: [6, 6]
+        function updateSubRouting() {
+            if (subWaypoints.length < 2) {
+                if (subRoutingControl) {
+                    map.removeControl(subRoutingControl);
+                    subRoutingControl = null;
+                }
+                updateStats(null, 0);
+                return;
+            }
+
+            if (subRoutingControl) {
+                map.removeControl(subRoutingControl);
+            }
+
+            subRoutingControl = L.Routing.control({
+                waypoints: subWaypoints,
+                router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+                lineOptions: {
+                    styles: [{ color: '#f97316', weight: 4, opacity: 0.9 }]
+                },
+                show: false,
+                addWaypoints: false,
+                fitSelectedRoutes: false,
+                createMarker: (i, wp) => L.marker(wp.latLng, {
+                    icon: L.divIcon({
+                        className: 'custom-pin',
+                        html: `<div style="background:#f97316;color:white;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;font-weight:600;font-size:10px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);">U${i+1}</div>`,
+                        iconSize: [22, 22],
+                        iconAnchor: [11, 11]
+                    })
+                })
+            }).addTo(map);
+
+            subRoutingControl.on('routesfound', function(e) {
+                const dist = e.routes[0].summary.totalDistance;
+                updateStats(null, dist);
             });
-            const marker = L.marker(latlng, { icon: houseIcon }).addTo(map)
-                .bindTooltip(`<span class="mono">Budova #${connectedHousesCount} (FTTH)</span>`, { className: 'custom-tooltip', direction: 'top' });
-            houseMarkers.push(marker);
-            updateCalculations();
         }
 
-        function updateCalculations() {
-            const cableCostPerM = parseFloat(document.getElementById('cable-type').value) || 45;
-            const excCostPerM = parseFloat(document.getElementById('exc-type').value) || 350;
-            const terrainCoeff = parseFloat(document.getElementById('terrain-coeff').value) || 1.0;
+        function renderPlacedItems() {
+            markersGroup.clearLayers();
+            placedItems.forEach((item) => {
+                let iconEmoji = '📍', bgCol = '#64748b';
+                if (item.type === 'house') { iconEmoji = '🏠'; bgCol = '#059669'; }
+                else if (item.type === 'building') { iconEmoji = '🏢'; bgCol = '#2563eb'; }
+                else if (item.type === 'shaft') { iconEmoji = '🕳️'; bgCol = '#7c3aed'; }
+                else if (item.type === 'chamber') { iconEmoji = '📦'; bgCol = '#f97316'; }
+                else if (item.type === 'splitter') { iconEmoji = '⚙️'; bgCol = '#db2777'; }
+                else if (item.type === 'amplifier') { iconEmoji = '⚡'; bgCol = '#d97706'; }
 
-            document.getElementById('lbl-cable-cost').innerText = cableCostPerM + ' Kč/m';
-            document.getElementById('lbl-exc-cost').innerText = excCostPerM + ' Kč/m';
-            document.getElementById('lbl-terrain-coeff').innerText = terrainCoeff + 'x';
-
-            const effectiveMeters = totalMeters * terrainCoeff;
-            const grandTotal = (effectiveMeters * cableCostPerM) + (effectiveMeters * excCostPerM) + (connectedHousesCount * 3500);
-            const lengthFormatted = totalMeters > 1000 ? (totalMeters / 1000).toFixed(2) + ' km' : Math.round(totalMeters) + ' m';
-            
-            document.getElementById('res-length').innerText = lengthFormatted;
-            document.getElementById('res-cable-cost').innerText = Math.round(effectiveMeters * cableCostPerM).toLocaleString() + ' Kč';
-            document.getElementById('res-exc-cost').innerText = Math.round(effectiveMeters * excCostPerM).toLocaleString() + ' Kč';
-            document.getElementById('res-houses').innerText = connectedHousesCount;
-            document.getElementById('res-total').innerText = Math.round(grandTotal).toLocaleString() + ' Kč';
-
-            document.getElementById('hdr-length').innerText = lengthFormatted;
-            document.getElementById('hdr-price').innerText = Math.round(grandTotal).toLocaleString() + ' Kč';
-            document.getElementById('hdr-houses').innerText = connectedHousesCount;
+                L.marker([item.lat, item.lng], {
+                    icon: L.divIcon({
+                        className: 'item-pin',
+                        html: `<div style="background:${bgCol};color:white;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 3px 6px rgba(0,0,0,0.2);white-space:nowrap;border:1.5px solid white;">${iconEmoji} ${item.name}</div>`,
+                        iconSize: [110, 30],
+                        iconAnchor: [55, 15]
+                    })
+                }).addTo(markersGroup);
+            });
         }
 
-        function clearMap() {
-            waypoints = [];
-            connectedHousesCount = 0;
-            totalMeters = 0;
-            if (routingControl) { map.removeControl(routingControl); routingControl = null; }
-            houseMarkers.forEach(m => map.removeLayer(m));
-            houseMarkers = [];
-            map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
-            updateCalculations();
-            addRoutePoint(L.latlng(defaultLat, defaultLng));
+        let currentMainDist = 0;
+        let currentSubDist = 0;
+
+        function updateStats(mDist = null, sDist = null) {
+            if (mDist !== null) currentMainDist = mDist;
+            if (sDist !== null) currentSubDist = sDist;
+
+            const totalDist = currentMainDist + currentSubDist;
+            const reserve = totalDist * 0.10;
+            const totalLength = totalDist + reserve;
+
+            const cableCost = totalLength * CABLE_PRICE_PER_METER;
+            const itemsCost = placedItems.reduce((sum, item) => sum + item.price, 0);
+            const grandTotal = cableCost + itemsCost;
+
+            document.getElementById('val-main-len').textContent = currentMainDist.toFixed(1) + ' m';
+            document.getElementById('val-sub-len').textContent = currentSubDist.toFixed(1) + ' m';
+            document.getElementById('val-reserve').textContent = reserve.toFixed(1) + ' m';
+            document.getElementById('val-total').textContent = totalLength.toFixed(1) + ' m';
+
+            document.getElementById('val-price-cables').textContent = Math.round(cableCost).toLocaleString() + ' Kč';
+            document.getElementById('val-price-items').textContent = Math.round(itemsCost).toLocaleString() + ' Kč';
+            document.getElementById('val-price-total').textContent = Math.round(grandTotal).toLocaleString() + ' Kč';
         }
 
-        function exportData() {
+        function updatePlacedListUI() {
+            const listEl = document.getElementById('placed-list');
+            if (placedItems.length === 0) {
+                listEl.innerHTML = `<li style="color:#94a3b8; text-align:center; padding:12px;">Zatím nebyly vloženy žádné prvky</li>`;
+                return;
+            }
+            listEl.innerHTML = placedItems.map((item, idx) => `
+                <li>
+                    <span>${idx+1}. ${item.name}</span>
+                    <span style="font-weight:600; color:#059669;">${item.price.toLocaleString()} Kč</span>
+                </li>
+            `).join('');
+        }
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if (confirm('Opravdu chcete vymazat celou trasu a všechny vložené prvky?')) {
+                mainWaypoints = [];
+                subWaypoints = [];
+                if (mainRoutingControl) { map.removeControl(mainRoutingControl); mainRoutingControl = null; }
+                if (subRoutingControl) { map.removeControl(subRoutingControl); subRoutingControl = null; }
+                placedItems = [];
+                markersGroup.clearLayers();
+                currentMainDist = 0;
+                currentSubDist = 0;
+                updateStats(0, 0);
+                updatePlacedListUI();
+            }
+        });
+
+        document.getElementById('btn-auth').addEventListener('click', () => {
+            document.getElementById('auth-modal').style.display = 'flex';
+        });
+        document.getElementById('auth-close').addEventListener('click', () => {
+            document.getElementById('auth-modal').style.display = 'none';
+        });
+        document.getElementById('btn-login-save').addEventListener('click', () => {
+            const name = document.getElementById('username-input').value.trim();
+            if (name) {
+                currentUser = name;
+                localStorage.setItem('optipath_user', currentUser);
+                document.getElementById('btn-auth').textContent = `👤 ${currentUser}`;
+                document.getElementById('auth-modal').style.display = 'none';
+            }
+        });
+
+        document.getElementById('btn-share').addEventListener('click', () => {
             const projectData = {
-                system: "OptiPath AI Enterprise GIS",
-                user: Alpine.$data(document.body).currentUser || "Guest",
-                totalMeters: totalMeters,
-                connectedHouses: connectedHousesCount,
-                totalPrice: document.getElementById('res-total').innerText
+                user: currentUser,
+                main: mainWaypoints.map(wp => ({ lat: wp.lat, lng: wp.lng })),
+                sub: subWaypoints.map(wp => ({ lat: wp.lat, lng: wp.lng })),
+                items: placedItems
             };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "optipath_project.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
+            const encoded = btoa(encodeURIComponent(JSON.stringify(projectData)));
+            const shareLink = window.location.origin + window.location.pathname + '#project=' + encoded;
+            prompt("Zkopírujte tento odkaz pro sdílení s přáteli:", shareLink);
+        });
 
-        function initVisitorCounter() {
-            let count = localStorage.getItem('optipath_visitors');
-            if (!count) count = Math.floor(Math.random() * 50) + 120;
-            else count = parseInt(count) + 1;
-            localStorage.setItem('optipath_visitors', count);
-            const vElem = document.getElementById('visitor-count');
-            if (vElem) vElem.innerText = count;
-        }
+        document.getElementById('btn-report').addEventListener('click', () => {
+            updatePlacedListUI();
+            const modal = document.getElementById('report-modal');
+            const reportContent = document.getElementById('report-content');
+            
+            const totalDist = currentMainDist + currentSubDist;
+            const totalLenWithReserve = totalDist * 1.10;
+            const cableCost = totalLenWithReserve * CABLE_PRICE_PER_METER;
+            const itemsCost = placedItems.reduce((sum, item) => sum + item.price, 0);
+            const totalCost = cableCost + itemsCost;
 
-        window.onload = function() {
-            initMap();
-            initVisitorCounter();
-            updateCalculations();
-        };
+            reportContent.innerHTML = `
+                <div class="report-section">
+                    <h4>1. Identifikace projektu</h4>
+                    <p><strong>Autor / Uživatel:</strong> ${currentUser}</p>
+                    <p><strong>Datum generování:</strong> ${new Date().toLocaleDateString('cs-CZ')}</p>
+                </div>
+                <div class="report-section">
+                    <h4>2. Parametry optické sítě</h4>
+                    <p>Délka hlavní větve: <strong>${currentMainDist.toFixed(1)} m</strong></p>
+                    <p>Délka uliček a přípojek: <strong>${currentSubDist.toFixed(1)} m</strong></p>
+                    <p>Celková délka tras: <strong>${totalDist.toFixed(1)} m</strong></p>
+                    <p>Celková délka včetně provozní rezervy (10%): <strong>${totalLenWithReserve.toFixed(1)} m</strong></p>
+                </div>
+                <div class="report-section">
+                    <h4>3. Finanční rozpočet</h4>
+                    <p>Náklady na optické kabely (${CABLE_PRICE_PER_METER} Kč/m): <strong>${Math.round(cableCost).toLocaleString()} Kč</strong></p>
+                    <p>Náklady na stavební a aktivní prvky (${placedItems.length} ks): <strong>${Math.round(itemsCost).toLocaleString()} Kč</strong></p>
+                    <p style="color:#059669; font-size:1.05rem; margin-top:10px;"><strong>Celkové předpokládané náklady: ${Math.round(totalCost).toLocaleString()} Kč</strong></p>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        });
+
+        document.getElementById('modal-close').addEventListener('click', () => {
+            document.getElementById('report-modal').style.display = 'none';
+        });
+
+        document.getElementById('btn-print-report').addEventListener('click', () => window.print());
+
+        document.getElementById('btn-export').addEventListener('click', () => {
+            const data = { user: currentUser, mainWaypoints, subWaypoints, placedItems };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'optipath_projekt.json';
+            a.click();
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.location.hash.includes('#project=')) {
+                try {
+                    const base64Data = window.location.hash.split('#project=')[1];
+                    const jsonString = decodeURIComponent(atob(base64Data));
+                    const project = JSON.parse(jsonString);
+
+                    if (project.main) {
+                        mainWaypoints = project.main.map(pt => L.latLng(pt.lat, pt.lng));
+                        updateMainRouting();
+                    }
+                    if (project.sub) {
+                        subWaypoints = project.sub.map(pt => L.latLng(pt.lat, pt.lng));
+                        updateSubRouting();
+                    }
+                    if (project.items) {
+                        placedItems = project.items;
+                        renderPlacedItems();
+                        updatePlacedListUI();
+                    }
+                    if (project.user) {
+                        currentUser = project.user;
+                        const btnAuth = document.getElementById('btn-auth');
+                        if (btnAuth) btnAuth.textContent = `👤 ${currentUser}`;
+                    }
+                } catch (e) {
+                    console.error('Chyba při parsování sdíleného projektu:', e);
+                }
+            }
+        });
     </script>
 </body>
 </html>
