@@ -1,4 +1,4 @@
-# OptiPath AI Pro
+# OptiPath
 
 Interaktivní inženýrský nástroj pro návrh, routování a optimalizaci optických sítí (FTTH/MDU) přímo v mapě.
 
