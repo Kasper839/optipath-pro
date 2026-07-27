@@ -498,16 +498,23 @@
                 border-radius: 30px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 998;
-                gap: 6px;
+                gap: 4px;
                 border: 1px solid var(--border);
+                overflow-x: auto;
+                max-width: 95vw;
+                scrollbar-width: none;
+            }
+            .mobile-bottom-toolbar::-webkit-scrollbar {
+                display: none;
             }
             .mobile-bottom-toolbar button {
-                padding: 8px 14px;
-                font-size: 0.78rem;
+                padding: 8px 12px;
+                font-size: 0.75rem;
                 border-radius: 20px;
                 border: none;
                 background: #f1f5f9;
                 font-weight: 600;
+                white-space: nowrap;
             }
             .mobile-bottom-toolbar button.active {
                 background: var(--accent);
@@ -553,10 +560,12 @@
             <div id="map-container">
                 <div id="map"></div>
                 
+                <!-- Spodní mobilní lišta obsahující i tlačítko pro uložení/projekty -->
                 <div class="mobile-bottom-toolbar">
                     <button id="m-btn-main" class="active" onclick="setMobileMode('main-branch')">🔌 Hlavní</button>
                     <button id="m-btn-sub" onclick="setMobileMode('sub-branch')">🛣️ Vedlejší</button>
                     <button id="m-btn-lib" onclick="openLibraryModalMobile()">📚 Prvky</button>
+                    <button onclick="openProjectsModalMobile()" style="background: #e0f2fe; color: #0369a1;">📂 Uložit / Načíst</button>
                 </div>
             </div>
 
@@ -864,6 +873,12 @@
             renderProjectsList();
             myProjectsModal.style.display = 'flex';
         });
+
+        window.openProjectsModalMobile = function() {
+            renderProjectsList();
+            myProjectsModal.style.display = 'flex';
+        }
+
         document.getElementById('projects-close').addEventListener('click', () => {
             myProjectsModal.style.display = 'none';
         });
@@ -1088,7 +1103,7 @@
                 else if (item.type === 'cable') { iconEmoji = '🔌'; bgCol = '#0284c7'; }
                 else if (item.type === 'accessory') { iconEmoji = '🛠️'; bgCol = '#475569'; }
 
-                // Zajištění fixní velikosti a správného ořezu textu (žádné přetékání)
+                // Fixní velikost a ořez textu u prvků
                 L.marker([item.lat, item.lng], {
                     icon: L.divIcon({
                         className: 'item-pin',
@@ -1120,7 +1135,6 @@
             let machineryText = "Ruční nářadí + hutnící deska";
 
             if (totalDist > 0) {
-                // Realističtější výpočet pro lidi, tým a dny
                 if (totalDist < 150) {
                     crewCount = 2;
                     estimatedDays = Math.max(0.3, (totalDist / 45)).toFixed(1);
