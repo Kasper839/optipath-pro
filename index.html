@@ -76,18 +76,45 @@
             letter-spacing: -0.025em;
         }
 
-        .project-badge {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+        .project-badge-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             background: #f1f5f9;
             padding: 4px 8px;
             border-radius: 6px;
             border: 1px solid var(--border);
+        }
+
+        .project-badge {
+            font-size: 0.75rem;
+            color: var(--text-muted);
             font-weight: 500;
             max-width: 150px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .project-badge:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        .edit-proj-name-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 2px;
+            display: flex;
+            align-items: center;
+        }
+
+        .edit-proj-name-btn:hover {
+            color: var(--accent);
         }
 
         .toolbar, .actions {
@@ -481,7 +508,7 @@
                 height: calc(100vh - 56px);
                 height: calc(100dvh - 56px);
             }
-            .logo-area .project-badge {
+            .logo-area .project-badge-container {
                 display: none;
             }
             .toolbar {
@@ -515,6 +542,7 @@
                 background: #f1f5f9;
                 font-weight: 600;
                 white-space: nowrap;
+                cursor: pointer;
             }
             .mobile-bottom-toolbar button.active {
                 background: var(--accent);
@@ -535,7 +563,10 @@
         <header class="top-bar">
             <div class="logo-area">
                 <span class="logo">⚡ OptiPath</span>
-                <span class="project-badge" id="proj-badge-top">Nový projekt</span>
+                <div class="project-badge-container">
+                    <span class="project-badge" id="proj-badge-top" onclick="promptRenameProject()" title="Klikněte pro přejmenování projektu">Nový projekt</span>
+                    <button class="edit-proj-name-btn" onclick="promptRenameProject()" title="Upravit název projektu">✏️</button>
+                </div>
             </div>
             
             <div class="toolbar">
@@ -560,12 +591,12 @@
             <div id="map-container">
                 <div id="map"></div>
                 
-                <!-- Spodní mobilní lišta obsahující i tlačítko pro uložení/projekty -->
+                <!-- Spodní mobilní lišta -->
                 <div class="mobile-bottom-toolbar">
                     <button id="m-btn-main" class="active" onclick="setMobileMode('main-branch')">🔌 Hlavní</button>
                     <button id="m-btn-sub" onclick="setMobileMode('sub-branch')">🛣️ Vedlejší</button>
                     <button id="m-btn-lib" onclick="openLibraryModalMobile()">📚 Prvky</button>
-                    <button onclick="openProjectsModalMobile()" style="background: #e0f2fe; color: #0369a1;">📂 Uložit / Načíst</button>
+                    <button onclick="openProjectsModalMobile()" style="background: #e0f2fe; color: #0369a1;">💾 Uložit projekt</button>
                 </div>
             </div>
 
@@ -734,6 +765,15 @@
 
         btnMainBranch.addEventListener('click', () => setMode('main-branch'));
         btnSubBranch.addEventListener('click', () => setMode('sub-branch'));
+
+        // Funkce pro úpravu názvu projektu
+        window.promptRenameProject = function() {
+            const newName = prompt("Zadejte nový název projektu:", currentProjectName);
+            if (newName !== null && newName.trim() !== "") {
+                currentProjectName = newName.trim();
+                document.getElementById('proj-badge-top').textContent = currentProjectName;
+            }
+        }
 
         const libraryCategories = {
             buildings: {
@@ -1035,7 +1075,6 @@
                 lineOptions: { styles: [{ color: color, weight: type === 'main' ? 6 : 4, opacity: 0.9 }] },
                 show: false, addWaypoints: false, fitSelectedRoutes: false,
                 createMarker: (i, wp) => {
-                    // Čistá tečka místo písmen A a B
                     return L.marker(wp.latLng, {
                         icon: L.divIcon({
                             className: 'custom-dot-pin',
@@ -1103,7 +1142,6 @@
                 else if (item.type === 'cable') { iconEmoji = '🔌'; bgCol = '#0284c7'; }
                 else if (item.type === 'accessory') { iconEmoji = '🛠️'; bgCol = '#475569'; }
 
-                // Fixní velikost a ořez textu u prvků
                 L.marker([item.lat, item.lng], {
                     icon: L.divIcon({
                         className: 'item-pin',
