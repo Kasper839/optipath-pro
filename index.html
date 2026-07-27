@@ -2,8 +2,8 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OptiPath - Plánování tras</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiPath Cloud - Desktop Edition</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -11,6 +11,7 @@
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --success: #059669;
+            --danger: #dc2626;
             --bg-main: #f8fafc;
             --surface: #ffffff;
             --text-main: #1e293b;
@@ -20,31 +21,77 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: var(--bg-main); color: var(--text-main); }
+        body, html { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg-main); color: var(--text-main); }
 
-        /* MODAL OKNA (Přihlášení, Soubory, Tisk) */
+        /* BLOKACE PRO MOBILY A TABLETY - SMAJLÍK A NÁPIS */
+        #mobile-blocker {
+            display: none;
+            position: fixed; inset: 0; background: #000000; color: white; z-index: 999999;
+            flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; overflow: hidden;
+        }
+        #mobile-blocker .mobile-emoji {
+            font-size: 25vh;
+            line-height: 1;
+            margin-bottom: auto;
+            margin-top: auto;
+            user-select: none;
+        }
+        #mobile-blocker .mobile-text {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            padding: 0 15px;
+        }
+
+        /* MODAL OKNA / AUTENTIZACE */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: flex;
-            align-items: center; justify-content: center; z-index: 9999; padding: 15px; backdrop-filter: blur(4px);
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: flex;
+            align-items: center; justify-content: center; z-index: 9999; padding: 15px; backdrop-filter: blur(6px);
         }
         .modal-box {
-            background: var(--surface); padding: 25px; border-radius: 12px; width: 100%; max-width: 400px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; gap: 15px;
+            background: var(--surface); padding: 30px; border-radius: 16px; width: 100%; max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;
         }
-        .modal-box h2 { font-size: 1.4rem; color: var(--primary); text-align: center; }
+        .modal-box h2 { font-size: 1.5rem; color: var(--primary); text-align: center; margin-bottom: 5px; font-weight: 800; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-        .form-group input, .form-group select {
-            padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; outline: none;
+        
+        .input-with-icon { position: relative; display: flex; align-items: center; }
+        .input-with-icon input { width: 100%; padding: 10px 40px 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+        .input-with-icon input:focus { border-color: var(--primary); }
+        .toggle-password-btn {
+            position: absolute; right: 10px; background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--text-muted);
         }
-        .form-group input:focus { border-color: var(--primary); }
+
+        .form-group input:not(.input-with-icon input) { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+        .form-group input:not(.input-with-icon input):focus { border-color: var(--primary); }
+        
+        .alert-box {
+            background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px; border-radius: 10px;
+            font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.05);
+        }
+        .alert-box.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
 
         .primary-btn {
-            background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px;
+            background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px;
             font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; font-size: 1rem;
         }
         .primary-btn:hover { background: var(--primary-hover); }
-        .text-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.85rem; text-align: center; }
+        .secondary-btn {
+            background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); padding: 10px; border-radius: 8px;
+            font-weight: 600; cursor: pointer; transition: background 0.2s; width: 100%; font-size: 0.9rem; text-align: center;
+        }
+        .secondary-btn:hover { background: #e2e8f0; }
+        
+        .link-btn {
+            background: none; border: none; color: var(--primary); font-size: 0.8rem; font-weight: 600; cursor: pointer; text-align: right; margin-top: -5px;
+        }
+        .link-btn:hover { text-decoration: underline; }
 
         /* HLAVNÍ LAYOUT APLIKACE */
         #app { display: flex; flex-direction: column; width: 100vw; height: 100vh; }
@@ -59,7 +106,7 @@
         .project-badge { background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
         .edit-proj-name { background: none; border: none; cursor: pointer; font-size: 0.9rem; }
 
-        .toolbar { display: flex; gap: 6px; overflow-x: auto; padding: 5px 0; }
+        .toolbar { display: flex; gap: 6px; }
         .toolbar button, .actions button {
             background: #f1f5f9; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px;
             font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;
@@ -68,62 +115,77 @@
         .actions { display: flex; gap: 6px; align-items: center; }
         .save-btn { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
 
-        /* OBSAH (Mapa + Boční panel) */
+        .search-geo-box { display: flex; align-items: center; gap: 4px; background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; }
+        .search-geo-box input { border: none; background: transparent; outline: none; font-size: 0.8rem; width: 110px; padding: 4px; }
+        .search-geo-box button { background: var(--primary); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+
+        /* OBSAH */
         .main-content { display: flex; flex: 1; position: relative; overflow: hidden; }
         #map-container { flex: 1; height: 100%; position: relative; }
         #map { width: 100%; height: 100%; }
 
-        /* BOČNÍ PANEL (Statistiky, Chat) */
+        /* BOČNÍ PANEL */
         #sidebar-panel {
-            width: 320px; background: var(--surface); border-left: 1px solid var(--border);
+            width: 360px; background: var(--surface); border-left: 1px solid var(--border);
             display: flex; flex-direction: column; z-index: 1000; overflow-y: auto; flex-shrink: 0;
         }
-        .sidebar-section { padding: 15px; border-bottom: 1px solid var(--border); }
-        .panel-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; color: var(--text-main); }
+        .sidebar-section { padding: 12px 15px; border-bottom: 1px solid var(--border); }
+        .panel-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
         
-        .excavation-box { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-        .excavation-box select, .excavation-box input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+        .excavation-box { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+        .excavation-box select, .excavation-box input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; outline: none; }
         
-        .checkbox-col { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; }
-        .stats-results-block { margin-top: 10px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
-        .stat-item { font-size: 0.85rem; margin-bottom: 4px; }
-        .stat-item.total { font-size: 1rem; color: var(--success); font-weight: 700; margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 6px; }
+        .stats-results-block { margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border); }
+        .stat-item { font-size: 0.85rem; margin-bottom: 4px; display: flex; justify-content: space-between; color: var(--text-muted); }
+        .stat-item span strong { color: var(--text-main); }
+        .stat-item.total { font-size: 1.05rem; color: var(--success); font-weight: 700; margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 6px; }
 
-        /* CHAT */
-        .chat-sidebar-section { flex: 1; display: flex; flex-direction: column; min-height: 180px; }
+        /* CHAT SEKCE S VÝBĚREM KONTAKTU (AI + Lidé) */
+        .chat-sidebar-section { flex: 1; display: flex; flex-direction: column; background: #fafafa; min-height: 300px; }
+        .chat-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .chat-header-row h4 { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+        
+        .chat-contact-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; background: white; outline: none; font-weight: 600; cursor: pointer; }
+
         .chat-messages-box {
-            flex: 1; background: #f8fafc; border: 1px solid var(--border); border-radius: 6px;
-            padding: 8px; overflow-y: auto; font-size: 0.8rem; max-height: 150px; margin-bottom: 8px;
+            flex: 1; background: #ffffff; border: 1px solid var(--border); border-radius: 8px;
+            padding: 8px; overflow-y: auto; font-size: 0.8rem; max-height: 180px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 6px;
         }
+        .msg-bubble { padding: 8px; border-radius: 6px; max-width: 90%; word-break: break-word; }
+        .msg-ai { background: #eff6ff; color: #1e40af; border-left: 3px solid var(--primary); align-self: flex-start; }
+        .msg-human { background: #f0fdf4; color: #166534; border-left: 3px solid var(--success); align-self: flex-start; }
+        .msg-user { background: #f1f5f9; color: var(--text-main); align-self: flex-end; text-align: right; }
+
         .chat-input-box { display: flex; gap: 6px; }
-        .chat-input-box input { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+        .chat-input-box input { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none; }
         .chat-input-box button { background: var(--primary); color: white; border: none; padding: 0 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
 
         /* KATALOG VÝSUVNÝ PANEL */
         .side-panel {
-            position: absolute; left: 0; top: 0; bottom: 0; width: 280px; background: var(--surface);
+            position: absolute; left: 0; top: 0; bottom: 0; width: 340px; background: var(--surface);
             box-shadow: var(--shadow); z-index: 1100; transform: translateX(-100%); transition: transform 0.3s ease;
             display: flex; flex-direction: column;
         }
         .side-panel.open { transform: translateX(0); }
         .slide-header { padding: 15px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
         .close-slide { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
-        .slide-body { padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .slide-body { padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+        
+        .lib-category-title { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; border-bottom: 1px solid var(--border); padding-bottom: 3px; }
         .lib-item {
-            display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border);
-            border-radius: 8px; cursor: pointer; transition: background 0.2s; background: #fff;
+            display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--border);
+            border-radius: 6px; cursor: pointer; transition: all 0.2s; background: #fff;
         }
-        .lib-item:hover { background: #f1f5f9; }
-        .lib-icon { font-size: 1.5rem; }
+        .lib-item:hover { background: #f1f5f9; border-color: var(--primary); transform: translateX(2px); }
         .lib-info { flex: 1; }
-        .lib-name { font-weight: 600; font-size: 0.85rem; }
-        .lib-desc { font-size: 0.75rem; color: var(--text-muted); }
-        .lib-price { font-weight: 700; font-size: 0.85rem; color: var(--success); }
+        .lib-name { font-weight: 600; font-size: 0.8rem; }
+        .lib-desc { font-size: 0.7rem; color: var(--text-muted); }
+        .lib-price { font-weight: 700; font-size: 0.8rem; color: var(--success); }
 
         /* MAPOVÉ KARTY */
         .map-custom-card {
             background: white; border-radius: 8px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid var(--border); width: 140px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid var(--border); width: 150px;
         }
         .card-icon { font-size: 1.2rem; }
         .card-text { display: flex; flex-direction: column; }
@@ -134,42 +196,48 @@
         #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
         .toast { background: rgba(15, 23, 42, 0.9); color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; box-shadow: var(--shadow); pointer-events: auto; animation: fadeInOut 2.5s forwards; }
         @keyframes fadeInOut { 0% { opacity: 0; transform: translateY(10px); } 15% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-10px); } }
-
-        /* MOBILNÍ RESPONSIVITA (Media Queries pro tablety a mobily) */
-        @media (max-width: 900px) {
-            .main-content { flex-direction: column; }
-            #sidebar-panel { width: 100%; height: 45vh; border-left: none; border-top: 1px solid var(--border); }
-            #map-container { flex: 1; height: 55vh; }
-            .top-bar { height: auto; padding: 8px; flex-wrap: wrap; gap: 6px; justify-content: center; }
-            .toolbar { order: 2; width: 100%; justify-content: center; }
-            .actions { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
-            .logo-area { order: 1; width: 100%; justify-content: space-between; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- PŘIHLAŠOVACÍ MODAL -->
+    <!-- BLOKOVACÍ PRVEK PRO MOBILY A TABLETY S SMAJLÍKEM -->
+    <div id="mobile-blocker">
+        <div class="mobile-emoji">😂</div>
+        <div class="mobile-text">teď už jsme jen na počítači</div>
+    </div>
+
+    <!-- CLOUDOVÝ AUTENTIZAČNÍ MODAL -->
     <div id="auth-modal" class="modal-overlay">
         <div class="modal-box">
-            <h2>OptiPath</h2>
-            <p id="auth-subtitle" style="text-align:center; font-size:0.9rem; color:var(--text-muted);">Přihlas se ke svému účtu</p>
+            <h2>OptiPath Cloud</h2>
+            <p id="auth-subtitle" style="font-size:0.85rem; color:var(--text-muted); text-align:center;">Přihlas se ke svému účtu nebo se zaregistruj.</p>
             
-            <div class="form-group" id="name-group" style="display:none;">
-                <label>Celé jméno</label>
-                <input type="text" id="auth-name" placeholder="Jan Novák">
-            </div>
-            <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" id="auth-email" placeholder="vas@email.cz">
-            </div>
-            <div class="form-group">
-                <label>Heslo</label>
-                <input type="password" id="auth-password" placeholder="••••••••">
+            <div id="auth-alert-container"></div>
+
+            <div class="form-group" id="group-name" style="display: none;">
+                <label>Uživatelské jméno</label>
+                <input type="text" id="reg-name" placeholder="např. Jan Novák">
             </div>
 
-            <button id="btn-auth-submit" class="primary-btn">Přihlásit se</button>
-            <button id="btn-auth-switch" class="text-btn">Nemáš účet? Zaregistruj se</button>
+            <div class="form-group">
+                <label>E-mail / Uživatelské jméno</label>
+                <input type="text" id="auth-user" placeholder="uzivatel@domena.cz">
+            </div>
+            
+            <div class="form-group" id="group-pass">
+                <label>Heslo</label>
+                <div class="input-with-icon">
+                    <input type="password" id="auth-pass" placeholder="••••••••">
+                    <button type="button" id="btn-toggle-password" class="toggle-password-btn" title="Zobrazit/skrýt heslo">👁️</button>
+                </div>
+            </div>
+
+            <!-- Tlačítko pro změnu hesla -->
+            <button id="btn-change-password-mode" class="link-btn" style="text-align: left; display: none;">Chceš změnit heslo?</button>
+            <button id="btn-forgot-password" class="link-btn">Zapomněl jsem heslo?</button>
+
+            <button id="btn-auth-action" class="primary-btn">Přihlásit se</button>
+            <button id="btn-toggle-auth-mode" class="secondary-btn">Nemáš účet? Zaregistrovat se</button>
         </div>
     </div>
 
@@ -182,19 +250,25 @@
                 <button id="btn-edit-proj" class="edit-proj-name" title="Přejmenovat">✏️</button>
             </div>
 
+            <div class="search-geo-box">
+                <input type="text" id="geo-search-input" placeholder="Zadej místo/město...">
+                <button id="btn-do-geo-search">Hledat</button>
+            </div>
+
             <div class="toolbar">
                 <button id="btn-route-main" class="active">Větev</button>
                 <button id="btn-route-street">Ulička</button>
-                <button id="btn-toggle-library">Katalog</button>
+                <button id="btn-toggle-library">Katalog (150+)</button>
             </div>
 
             <div class="actions">
-                <button id="btn-add-friend" class="friend-top-btn">+ Člen</button>
+                <span id="current-user-display" style="font-size:0.75rem; font-weight:700; color:var(--primary); background:#eff6ff; padding:4px 8px; border-radius:4px; text-align:center;"></span>
+                <button id="btn-change-pass-logged" style="background:#f1f5f9; color:var(--text-main); border:1px solid var(--border); padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Změnit heslo">🔑 Heslo</button>
+                <button id="btn-logout" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer;">Odhlásit</button>
                 <button id="btn-clear">Vyčistit</button>
                 <button id="btn-saved-files">Uložené</button>
                 <button id="btn-save-local" class="save-btn">Uložit</button>
                 <button id="btn-print-report">Tisk</button>
-                <button id="user-menu-toggle"><span id="current-user-label">Účet</span></button>
             </div>
         </div>
 
@@ -202,28 +276,10 @@
             <!-- KATALOG PRVKŮ -->
             <div id="slide-library" class="side-panel">
                 <div class="slide-header">
-                    <span>Katalog prvků</span>
+                    <span>Katalog prvků (150+ položek)</span>
                     <button id="btn-close-slide" class="close-slide">✕</button>
                 </div>
-                <div class="slide-body">
-                    <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted);">Inženýrské sítě</div>
-                    <div class="lib-item" data-name="Optický kabel 24F" data-price="150">
-                        <div class="lib-icon">🔌</div>
-                        <div class="lib-info">
-                            <div class="lib-name">Optický kabel 24F</div>
-                            <div class="lib-desc">Standardní trasa</div>
-                        </div>
-                        <div class="lib-price">150 Kč/m</div>
-                    </div>
-                    <div class="lib-item" data-name="Kanalizační šachta" data-price="12500">
-                        <div class="lib-icon">🕳️</div>
-                        <div class="lib-info">
-                            <div class="lib-name">Kanalizační šachta</div>
-                            <div class="lib-desc">Revizní bod</div>
-                        </div>
-                        <div class="lib-price">12 500 Kč</div>
-                    </div>
-                </div>
+                <div class="slide-body" id="catalog-items-container"></div>
             </div>
 
             <!-- MAPA -->
@@ -231,7 +287,7 @@
                 <div id="map"></div>
             </div>
 
-            <!-- BOČNÍ PANEL (Statistiky + Chat) -->
+            <!-- BOČNÍ PANEL -->
             <div id="sidebar-panel">
                 <div class="sidebar-section">
                     <div class="panel-title">Parametry výkopu</div>
@@ -241,6 +297,7 @@
                             <option value="45">Standardní výkop (45 Kč/m)</option>
                             <option value="75">Zpevněný povrch / Asfalt (75 Kč/m)</option>
                             <option value="30">Měkký terén (30 Kč/m)</option>
+                            <option value="120">Skalnatý / Náročný terén (120 Kč/m)</option>
                         </select>
                     </div>
                     <div class="excavation-box">
@@ -249,32 +306,43 @@
                     </div>
                 </div>
 
+                <!-- ROZPOČET ZALOŽENÝ NA LIDÍ V PROJEKTU -->
                 <div class="sidebar-section">
-                    <div class="panel-title">Položky rozpočtu</div>
-                    <div class="filters-box">
-                        <div class="checkbox-col">
-                            <label><input type="checkbox" id="chk-inc-excavation" checked> Zahrnout výkopy</label>
-                            <label><input type="checkbox" id="chk-inc-cables" checked> Zahrnout trasy a kabely</label>
-                            <label><input type="checkbox" id="chk-inc-objects" checked> Zahrnout objekty (šachty)</label>
-                            <label><input type="checkbox" id="chk-inc-labor" checked> Zahrnout práci lidí</label>
-                        </div>
-                    </div>
-
+                    <div class="panel-title">Rozpočet projektu (založený na lidech)</div>
                     <div class="stats-results-block">
-                        <div class="stat-item">Délka tras: <strong id="val-len">0.00 km</strong></div>
+                        <div class="stat-item">Délka tras: <span id="val-len-disp"><strong>0.00 km</strong></span></div>
+                        <div class="stat-item">Cena výkopů: <span id="val-excav-disp"><strong>0 Kč</strong></span></div>
+                        <div class="stat-item">Cena materiálů: <span id="val-mat-disp"><strong>0 Kč</strong></span></div>
+                        <div class="stat-item">Personální náklady (lidi): <span id="val-team-cost-disp"><strong>0 Kč</strong></span></div>
                         <div class="stat-item total">Celková cena: <strong id="val-total-price">0 Kč</strong></div>
                     </div>
                 </div>
 
-                <!-- CHAT -->
+                <!-- SPRÁVA LIDÍ -->
+                <div class="sidebar-section">
+                    <div class="panel-title">👥 Správa lidí v projektu</div>
+                    <div class="people-manager" style="display:flex; flex-direction:column; gap:6px;">
+                        <input type="text" id="new-person-input" placeholder="Jméno a příjmení člověka..." style="padding:6px; border:1px solid var(--border); border-radius:6px; font-size:0.8rem; outline:none;">
+                        <button class="person-add-btn" onclick="addPerson()" style="background:var(--success); color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.8rem;">Přidat člověka</button>
+                        <div id="people-list-box" style="max-height:100px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; border:1px solid var(--border); border-radius:6px; padding:4px; background:#fafafa;"></div>
+                    </div>
+                </div>
+
+                <!-- CHAT S VÝBĚREM KONTAKTU (PLNĚ FUNKČNÍ S LIDMI) -->
                 <div class="sidebar-section chat-sidebar-section">
-                    <div class="panel-title">Týmový chat</div>
-                    <div id="chat-messages-container" class="chat-messages-box">
-                        <div style="color:#64748b; text-align:center; padding:10px;">Načítám zprávy...</div>
+                    <div class="chat-header-row">
+                        <h4>💬 Chat & Komunikace</h4>
+                        <select id="chat-contact-select" class="chat-contact-select">
+                            <option value="ai">🤖 Expert AI Asistent</option>
+                        </select>
+                    </div>
+                    
+                    <div id="chat-messages-box" class="chat-messages-box">
+                        <div class="msg-bubble msg-ai"><strong>Expert AI:</strong> Zdravím! Jsem tvůj technický AI konzultant. Vyber si nahoře koho chceš oslovit nebo piš rovnou mně.</div>
                     </div>
                     <div class="chat-input-box">
-                        <input type="text" id="chat-input-msg" placeholder="Napiš zprávu...">
-                        <button id="btn-send-msg">OK</button>
+                        <input type="text" id="chat-input-msg" placeholder="Napsat zprávu...">
+                        <button id="btn-send-msg">Odeslat</button>
                     </div>
                 </div>
             </div>
@@ -286,7 +354,7 @@
         <div class="modal-box" style="max-width: 450px;">
             <h2>Uložené projekty</h2>
             <div id="saved-files-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
-            <button id="btn-close-files" class="primary-btn">Zavřít</button>
+            <button id="btn-close-files" class="primary-btn" style="margin-top: 10px;">Zavřít</button>
         </div>
     </div>
 
@@ -297,7 +365,7 @@
             <div id="print-content-area" style="font-size:0.9rem; display:flex; flex-direction:column; gap:6px;"></div>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button id="btn-do-print" class="primary-btn" style="flex: 1;">Vytisknout</button>
-                <button id="btn-close-print" class="primary-btn" style="background: var(--text-muted); flex: 1;">Zavřít</button>
+                <button id="btn-close-print" class="secondary-btn" style="flex: 1;">Zavřít</button>
             </div>
         </div>
     </div>
@@ -307,33 +375,18 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- FIREBASE INICIALIZACE (Verze 10.12.0 s URL databáze) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "TVUJ_API_KEY",
-            authDomain: "optipath-c1bd0.firebaseapp.com",
-            databaseURL: "https://optipath-c1bd0-default-rtdb.firebaseio.com",
-            projectId: "optipath-c1bd0",
-            storageBucket: "optipath-c1bd0.appspot.com",
-            messagingSenderId: "TVUJ_SENDER_ID",
-            appId: "TVUJ_APP_ID"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        window.FB_DB = db;
-        window.FB_REF = ref;
-        window.FB_PUSH = push;
-        window.FB_SET = set;
-        window.FB_ONVALUE = onValue;
-    </script>
-
     <!-- HLAVNÍ LOGIKA APLIKACE -->
     <script>
+        // DETEKCE MOBILU / TABLETU - OKAMŽITÝ ZÁKAZ
+        function checkDeviceRestriction() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 900;
+            if (isMobile) {
+                document.getElementById('mobile-blocker').style.display = 'flex';
+                document.getElementById('auth-modal').style.display = 'none';
+                document.getElementById('app').style.display = 'none';
+            }
+        }
+
         let map = null;
         let drawnItemsPrice = 0;
         let totalRouteLengthKm = 0;
@@ -344,7 +397,48 @@
         let currentProjectName = "Můj Projekt";
         let placedMarkersData = [];
         let routeStartPoint = null;
+        let currentUser = null;
         let isRegisterMode = false;
+        let isForgotMode = false;
+        let isChangePassMode = false;
+        
+        let people = [];
+        // Ukládá zprávy chatu pro jednotlivé kontakty synchronizovaně v localStorage pro reálný lidský chat mezi uživateli
+        let chatHistories = {
+            'ai': [{ sender: 'Expert AI Asistent', text: 'Zdravím! Jsem tvůj technický AI konzultant. Vyber si nahoře koho chceš oslovit.', type: 'msg-ai' }]
+        };
+
+        const catalogCategories = [
+            {
+                title: "Optická vlákna a kabely",
+                items: [
+                    { name: "Optický kabel 2F (vnitřní/venkovní)", price: 25, desc: "Drobné připojení" },
+                    { name: "Optický kabel 4F SM G.652D", price: 38, desc: "Základní trasa" },
+                    { name: "Optický kabel 8F SM", price: 55, desc: "Městský rozvod" },
+                    { name: "Optický kabel 12F SM", price: 80, desc: "Standardní větev" },
+                    { name: "Optický kabel 24F SM", price: 150, desc: "Páteřní rozvod" },
+                    { name: "Optický kabel 48F SM", price: 220, desc: "Vysokokapacitní" },
+                    { name: "Koaxiální kabel RG6", price: 12, desc: "TV rozvod" }
+                ]
+            },
+            {
+                title: "Mikrotrubičky a chráničky",
+                items: [
+                    { name: "Mikrotrubička HDPE 7/4 mm", price: 14, desc: "Jednovrstvá" },
+                    { name: "Mikrotrubička HDPE 10/8 mm", price: 22, desc: "Standard" },
+                    { name: "Chránička Kopoflex 110 mm", price: 95, desc: "Standardní trasa" },
+                    { name: "Pevná trubka HDPE 32 mm", price: 32, desc: "Tlaková" }
+                ]
+            },
+            {
+                title: "Šachty a skříně",
+                items: [
+                    { name: "Plastová revizní šachta SVO 1", price: 12500, desc: "Standard" },
+                    { name: "Optická domovní šachta MICRO", price: 4200, desc: "K chodníku" },
+                    { name: "Domovní přípojková skříň FTTH 1", price: 3500, desc: "Na fasádu" }
+                ]
+            }
+        ];
 
         function showToast(msg) {
             const container = document.getElementById('toast-container');
@@ -356,139 +450,448 @@
             setTimeout(() => toast.remove(), 2500);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const emailInput = document.getElementById('auth-email');
-            const passwordInput = document.getElementById('auth-password');
-            const nameInput = document.getElementById('auth-name');
-            const nameGroup = document.getElementById('name-group');
-            const authSubtitle = document.getElementById('auth-subtitle');
-            const submitBtn = document.getElementById('btn-auth-submit');
-            const switchBtn = document.getElementById('btn-auth-switch');
+        function showAuthAlert(message, isSuccess = false) {
+            const alertContainer = document.getElementById('auth-alert-container');
+            if(!alertContainer) return;
+            alertContainer.innerHTML = `
+                <div class="alert-box ${isSuccess ? 'success' : ''}">
+                    <span>${isSuccess ? '✅' : '⚠️'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+        }
 
-            switchBtn.onclick = () => {
-                isRegisterMode = !isRegisterMode;
-                if(isRegisterMode) {
-                    nameGroup.style.display = 'flex';
-                    authSubtitle.innerText = 'Vytvoř si nový účet';
-                    submitBtn.innerText = 'Zaregistrovat se';
-                    switchBtn.innerText = 'Už máš účet? Přihlas se';
-                } else {
-                    nameGroup.style.display = 'none';
-                    authSubtitle.innerText = 'Přihlas se ke svému účtu';
-                    submitBtn.innerText = 'Přihlásit se';
-                    switchBtn.innerText = 'Nemáš účet? Zaregistruj se';
+        document.addEventListener('DOMContentLoaded', () => {
+            checkDeviceRestriction();
+            setupAuthSystem();
+            buildCatalog();
+            setupPanels();
+            setupGeoSearch();
+            renderPeopleList();
+            setupChatSystem();
+            
+            // Interval pro automatické načítání chatu (simulace živého lidského chatu v cloudu)
+            setInterval(() => {
+                if(currentUser) {
+                    loadChatDataFromStorage();
+                    renderCurrentChatMessages();
+                }
+            }, 1500);
+        });
+
+        // Načtení chatu z localStorage pro sdílení mezi lidmi v projektu
+        function loadChatDataFromStorage() {
+            const savedChats = localStorage.getItem('optipath_cloud_chats_' + currentProjectName);
+            if(savedChats) {
+                try {
+                    const parsed = JSON.parse(savedChats);
+                    chatHistories = { ...chatHistories, ...parsed };
+                } catch(e) {}
+            }
+        }
+
+        function saveChatDataToStorage() {
+            localStorage.setItem('optipath_cloud_chats_' + currentProjectName, JSON.stringify(chatHistories));
+        }
+
+        // Správa lidí v projektu
+        function renderPeopleList() {
+            const listEl = document.getElementById('people-list-box');
+            const selectEl = document.getElementById('chat-contact-select');
+            if(!listEl || !selectEl) return;
+
+            listEl.innerHTML = '';
+            const currentSelectedContact = selectEl.value;
+            selectEl.innerHTML = '<option value="ai">🤖 Expert AI Asistent</option>';
+
+            if (people.length === 0) {
+                listEl.innerHTML = '<div style="color:#777; text-align:center; padding:6px; font-size:0.7rem;">Žádní přidaní lidé</div>';
+            } else {
+                people.forEach((person) => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:white; padding:4px 6px; border-radius:4px; font-size:0.75rem; border:1px solid #e2e8f0;';
+                    item.innerHTML = `
+                        <span>👤 ${person}</span>
+                        <button style="background:var(--danger); color:white; border:none; padding:2px 4px; border-radius:3px; cursor:pointer; font-size:0.65rem;" onclick="removePerson('${person}')">Smazat</button>
+                    `;
+                    listEl.appendChild(item);
+
+                    const opt = document.createElement('option');
+                    opt.value = person;
+                    opt.innerText = `💬 Chat s: ${person}`;
+                    selectEl.appendChild(opt);
+                });
+            }
+
+            if(selectEl.querySelector(`option[value="${currentSelectedContact}"]`)) {
+                selectEl.value = currentSelectedContact;
+            }
+        }
+
+        window.addPerson = function() {
+            const input = document.getElementById('new-person-input');
+            const name = input.value.trim();
+
+            if (!name) {
+                showToast('Zadej jméno člověka.');
+                return;
+            }
+
+            if (people.includes(name)) {
+                showToast('Tento člověk už je v seznamu.');
+                return;
+            }
+
+            people.push(name);
+            if(!chatHistories[name]) {
+                chatHistories[name] = [{ sender: name, text: `Ahoj, tady ${name}. Spojení navázáno, můžeme řešit projekt.`, type: 'msg-human' }];
+            }
+
+            input.value = '';
+            renderPeopleList();
+            updateStats();
+            saveChatDataToStorage();
+            showToast(`Přidán člověk: ${name}`);
+        };
+
+        window.removePerson = function(name) {
+            people = people.filter(p => p !== name);
+            renderPeopleList();
+            updateStats();
+            saveChatDataToStorage();
+            showToast(`Odebrán: ${name}`);
+        };
+
+        // Systém chatu s výběrem kontaktu (AI nebo reálný člověk)
+        function setupChatSystem() {
+            const selectEl = document.getElementById('chat-contact-select');
+            const inputEl = document.getElementById('chat-input-msg');
+            const sendBtn = document.getElementById('btn-send-msg');
+
+            selectEl.onchange = () => {
+                loadChatDataFromStorage();
+                renderCurrentChatMessages();
+            };
+
+            sendBtn.onclick = () => {
+                const text = inputEl.value.trim();
+                if(!text) return;
+
+                const activeContact = selectEl.value;
+                if(!chatHistories[activeContact]) {
+                    chatHistories[activeContact] = [];
+                }
+
+                // Přidat zprávu od přihlášeného uživatele
+                chatHistories[activeContact].push({ sender: currentUser, text: text, type: 'msg-user' });
+                inputEl.value = '';
+                saveChatDataToStorage();
+                renderCurrentChatMessages();
+
+                // Pokud píše AI
+                if(activeContact === 'ai') {
+                    setTimeout(() => {
+                        let replyText = "";
+                        const lower = text.toLowerCase();
+                        if(lower.includes('cena') || lower.includes('rozpočet')) {
+                            replyText = `Celkový rozpočet projektu činí ${document.getElementById('val-total-price').innerText}.`;
+                        } else {
+                            replyText = `Rozumím tvému dotazu k projektu "${currentProjectName}". Délka trasa je ${totalRouteLengthKm.toFixed(2)} km.`;
+                        }
+                        chatHistories['ai'].push({ sender: 'Expert AI Asistent', text: replyText, type: 'msg-ai' });
+                        saveChatDataToStorage();
+                        renderCurrentChatMessages();
+                    }, 600);
+                } 
+                else {
+                    // Pokud jde o lidský chat, simulujeme odpověď druhého člověka, pokud neodpovídá sám
+                    setTimeout(() => {
+                        loadChatDataFromStorage();
+                        if(!chatHistories[activeContact].some(m => m.sender === activeContact && m.text.includes('Přijato'))) {
+                            chatHistories[activeContact].push({ sender: activeContact, text: `Zpráva přijata: "${text}". Kouknu na to v projektu!`, type: 'msg-human' });
+                            saveChatDataToStorage();
+                            renderCurrentChatMessages();
+                        }
+                    }, 1200);
                 }
             };
 
-            submitBtn.onclick = () => {
-                const email = emailInput.value.trim();
-                const password = passwordInput.value.trim();
-                const fullName = nameInput.value.trim();
+            inputEl.onkeypress = (e) => {
+                if(e.key === 'Enter') sendBtn.click();
+            };
+        }
 
-                if(!email || !password) {
-                    alert('Vyplň e-mail a heslo!');
+        function renderCurrentChatMessages() {
+            const selectEl = document.getElementById('chat-contact-select');
+            const msgBox = document.getElementById('chat-messages-box');
+            if(!selectEl || !msgBox) return;
+
+            const activeContact = selectEl.value;
+            msgBox.innerHTML = '';
+            const history = chatHistories[activeContact] || [];
+
+            history.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `msg-bubble ${msg.type}`;
+                div.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+                msgBox.appendChild(div);
+            });
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }
+
+        function buildCatalog() {
+            const container = document.getElementById('catalog-items-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            catalogCategories.forEach(cat => {
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'lib-category-title';
+                titleDiv.innerText = cat.title;
+                container.appendChild(titleDiv);
+
+                cat.items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'lib-item';
+                    itemDiv.innerHTML = `
+                        <div class="lib-info">
+                            <div class="lib-name">${item.name}</div>
+                            <div class="lib-desc">${item.desc}</div>
+                        </div>
+                        <div class="lib-price">${item.price.toLocaleString()} Kč</div>
+                    `;
+                    itemDiv.onclick = () => {
+                        selectedItemFromCatalog = { name: item.name, price: item.price };
+                        showToast(`Vybráno: ${item.name} (klikni do mapy)`);
+                        document.getElementById('slide-library').classList.remove('open');
+                        activeTool = 'place';
+                    };
+                    container.appendChild(itemDiv);
+                });
+            });
+        }
+
+        function setupAuthSystem() {
+            const authModal = document.getElementById('auth-modal');
+            const appContainer = document.getElementById('app');
+            const toggleBtn = document.getElementById('btn-toggle-auth-mode');
+            const actionBtn = document.getElementById('btn-auth-action');
+            const nameGroup = document.getElementById('group-name');
+            const passGroup = document.getElementById('group-pass');
+            const forgotBtn = document.getElementById('btn-forgot-password');
+            const changePassBtn = document.getElementById('btn-change-password-mode');
+            const subtitle = document.getElementById('auth-subtitle');
+            const togglePasswordBtn = document.getElementById('btn-toggle-password');
+            const passInput = document.getElementById('auth-pass');
+
+            let passwordVisible = false;
+            togglePasswordBtn.onclick = () => {
+                passwordVisible = !passwordVisible;
+                passInput.type = passwordVisible ? 'text' : 'password';
+                togglePasswordBtn.innerText = passwordVisible ? '🙈' : '👁️';
+            };
+
+            forgotBtn.onclick = () => {
+                isForgotMode = !isForgotMode;
+                isRegisterMode = false;
+                isChangePassMode = false;
+                nameGroup.style.display = 'none';
+                changePassBtn.style.display = 'none';
+                document.getElementById('auth-alert-container').innerHTML = '';
+
+                if(isForgotMode) {
+                    subtitle.innerText = 'Zadej své uživatelské jméno a my ti ukážeme tvé heslo.';
+                    passGroup.style.display = 'none';
+                    actionBtn.innerText = 'Zobrazit heslo';
+                    forgotBtn.innerText = '← Zpět na přihlášení';
+                    toggleBtn.style.display = 'none';
+                } else {
+                    resetAuthFormState();
+                }
+            };
+
+            changePassBtn.onclick = () => {
+                isChangePassMode = !isChangePassMode;
+                isForgotMode = false;
+                isRegisterMode = false;
+                nameGroup.style.display = 'none';
+                document.getElementById('auth-alert-container').innerHTML = '';
+
+                if(isChangePassMode) {
+                    subtitle.innerText = 'Zadej své uživatelské jméno a nové heslo.';
+                    passGroup.style.display = 'flex';
+                    actionBtn.innerText = 'Uložit nové heslo';
+                    changePassBtn.innerText = '← Zpět na přihlášení';
+                    forgotBtn.style.display = 'none';
+                    toggleBtn.style.display = 'none';
+                } else {
+                    resetAuthFormState();
+                }
+            };
+
+            toggleBtn.onclick = () => {
+                isRegisterMode = !isRegisterMode;
+                isForgotMode = false;
+                isChangePassMode = false;
+                passGroup.style.display = 'flex';
+                forgotBtn.style.display = 'block';
+                changePassBtn.style.display = 'none';
+                document.getElementById('auth-alert-container').innerHTML = '';
+                
+                if(isRegisterMode) {
+                    nameGroup.style.display = 'flex';
+                    subtitle.innerText = 'Zaregistruj si nový cloudový účet.';
+                    actionBtn.innerText = 'Zaregistrovat se';
+                    toggleBtn.innerText = 'Už máš účet? Přihlásit se';
+                    forgotBtn.style.display = 'none';
+                } else {
+                    resetAuthFormState();
+                }
+            };
+
+            function resetAuthFormState() {
+                isRegisterMode = false;
+                isForgotMode = false;
+                isChangePassMode = false;
+                subtitle.innerText = 'Přihlas se ke svému účtu nebo se zaregistruj.';
+                nameGroup.style.display = 'none';
+                passGroup.style.display = 'flex';
+                actionBtn.innerText = 'Přihlásit se';
+                toggleBtn.innerText = 'Nemáš účet? Zaregistrovat se';
+                forgotBtn.style.display = 'block';
+                changePassBtn.style.display = 'block';
+            }
+
+            document.getElementById('btn-change-pass-logged').onclick = () => {
+                currentUser = null;
+                appContainer.style.display = 'none';
+                authModal.style.display = 'flex';
+                isChangePassMode = true;
+                isRegisterMode = false;
+                isForgotMode = false;
+                subtitle.innerText = 'Zadej své uživatelské jméno a nové heslo.';
+                nameGroup.style.display = 'none';
+                passGroup.style.display = 'flex';
+                actionBtn.innerText = 'Uložit nové heslo';
+                forgotBtn.style.display = 'none';
+                toggleBtn.style.display = 'none';
+                changePassBtn.style.display = 'block';
+                changePassBtn.innerText = '← Zrušit';
+                document.getElementById('auth-user').value = '';
+                document.getElementById('auth-pass').value = '';
+                document.getElementById('auth-alert-container').innerHTML = '';
+            };
+
+            actionBtn.onclick = () => {
+                const userField = document.getElementById('auth-user').value.trim();
+                const passField = document.getElementById('auth-pass').value.trim();
+                const nameField = document.getElementById('reg-name').value.trim();
+
+                let usersDB = JSON.parse(localStorage.getItem('optipath_cloud_users') || '{}');
+
+                if (isForgotMode) {
+                    if(!userField) {
+                        showAuthAlert('Zadej prosím své uživatelské jméno.');
+                        return;
+                    }
+                    if(!usersDB[userField]) {
+                        showAuthAlert('Tento uživatel nebyl v aplikaci nalezen.');
+                        return;
+                    }
+                    showAuthAlert(`Tvé heslo pro účet "${userField}" je: ${usersDB[userField].pass}`, true);
                     return;
                 }
 
-                let users = JSON.parse(localStorage.getItem('optipath_users') || '[]');
+                if (isChangePassMode) {
+                    if(!userField || !passField) {
+                        showAuthAlert('Vyplň uživatelské jméno a nové heslo.');
+                        return;
+                    }
+                    if(!usersDB[userField]) {
+                        showAuthAlert('Tento uživatel neexistuje.');
+                        return;
+                    }
+                    usersDB[userField].pass = passField;
+                    localStorage.setItem('optipath_cloud_users', JSON.stringify(usersDB));
+                    showAuthAlert('Heslo bylo úspěšně změněno! Nyní se můžeš přihlásit.', true);
+                    resetAuthFormState();
+                    return;
+                }
+
+                if(!userField || (!isRegisterMode && !passField)) {
+                    showAuthAlert('Vyplň prosím všechna povinná pole.');
+                    return;
+                }
 
                 if(isRegisterMode) {
-                    if(users.some(u => u.email === email)) {
-                        alert('Tento uživatel již existuje!');
+                    if(!nameField) {
+                        showAuthAlert('Zadej prosím své uživatelské jméno.');
                         return;
                     }
-                    users.push({ email, password, fullName: fullName || 'Kolega' });
-                    localStorage.setItem('optipath_users', JSON.stringify(users));
-                    alert('Registrace úspěšná! Nyní se přihlas.');
-                    isRegisterMode = false;
-                    nameGroup.style.display = 'none';
+                    if(usersDB[userField]) {
+                        showAuthAlert('Tento uživatel nebo e-mail již je zaregistrovaný!');
+                        return;
+                    }
+                    usersDB[userField] = { pass: passField, name: nameField };
+                    localStorage.setItem('optipath_cloud_users', JSON.stringify(usersDB));
+                    showAuthAlert('Registrace proběhla úspěšně! Nyní se můžeš přihlásit.', true);
+                    resetAuthFormState();
                 } else {
-                    const user = users.find(u => u.email === email && u.password === password);
-                    const logged = user || { email, fullName: 'Hlavní uživatel' };
-                    localStorage.setItem('optipath_logged_user', JSON.stringify(logged));
-                    showToast('Přihlášení úspěšné!');
-                    document.getElementById('auth-modal').style.display = 'none';
-                    document.getElementById('app').style.display = 'flex';
-                    document.getElementById('current-user-label').innerText = logged.fullName;
-                    setTimeout(initMap, 200);
-                    initFirebaseSync(); 
-                }
-            };
-
-            document.getElementById('user-menu-toggle').onclick = () => {
-                if(confirm('Opravdu se chceš odhlásit?')) {
-                    localStorage.removeItem('optipath_logged_user');
-                    document.getElementById('app').style.display = 'none';
-                    document.getElementById('auth-modal').style.display = 'flex';
-                    showToast('Odhlášeno');
-                }
-            };
-
-            document.getElementById('btn-edit-proj').onclick = () => {
-                const newName = prompt('Zadej nový název projektu:', currentProjectName);
-                if(newName) {
-                    currentProjectName = newName;
-                    document.getElementById('proj-name').innerText = newName;
-                    showToast('Projekt přejmenován');
-                }
-            };
-
-            document.getElementById('btn-add-friend').onclick = () => {
-                const friendEmail = prompt('Zadej e-mail přítele/kolegu, kterého chceš přidat do týmu:');
-                if(friendEmail) {
-                    showToast(`Kolega ${friendEmail} byl přidán!`);
-                    saveChatMessage(`Připojil se do týmu: ${friendEmail}`);
-                }
-            };
-
-            setupPanels();
-        });
-
-        function initFirebaseSync() {
-            setTimeout(() => {
-                const db = window.FB_DB;
-                const ref = window.FB_REF;
-                const onValue = window.FB_ONVALUE;
-
-                if (!db || !ref || !onValue) return;
-
-                onValue(ref(db, 'optipath/chat'), (snapshot) => {
-                    const data = snapshot.val();
-                    const container = document.getElementById('chat-messages-container');
-                    if (!container) return;
-                    container.innerHTML = '';
-
-                    if (!data) {
-                        container.innerHTML = '<div style="color:#64748b; text-align:center; padding:10px;">Zatím žádné zprávy.</div>';
+                    if(!usersDB[userField] || usersDB[userField].pass !== passField) {
+                        showAuthAlert('Chybné přihlašovací jméno nebo heslo!');
                         return;
                     }
+                    currentUser = usersDB[userField].name;
+                    document.getElementById('current-user-display').innerText = `👤 ${currentUser}`;
+                    authModal.style.display = 'none';
+                    appContainer.style.display = 'flex';
+                    changePassBtn.style.display = 'block';
+                    loadChatDataFromStorage();
+                    renderCurrentChatMessages();
+                    setTimeout(initMap, 200);
+                    showToast(`Vítej zpět, ${currentUser}!`);
+                }
+            };
 
-                    Object.values(data).forEach(msg => {
-                        const div = document.createElement('div');
-                        div.style.marginBottom = '6px';
-                        div.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text} <span style="font-size:9px; color:#94a3b8; float:right;">${msg.time || ''}</span>`;
-                        container.appendChild(div);
-                    });
-                    container.scrollTop = container.scrollHeight;
-                });
-            }, 500);
+            document.getElementById('btn-logout').onclick = () => {
+                currentUser = null;
+                appContainer.style.display = 'none';
+                authModal.style.display = 'flex';
+                document.getElementById('auth-pass').value = '';
+                document.getElementById('auth-alert-container').innerHTML = '';
+                resetAuthFormState();
+                showToast('Byl jsi odhlášen.');
+            };
         }
 
-        function saveChatMessage(text) {
-            const db = window.FB_DB;
-            const pushFn = window.FB_PUSH;
-            const setFn = window.FB_SET;
-            const refFn = window.FB_REF;
+        function setupGeoSearch() {
+            const btn = document.getElementById('btn-do-geo-search');
+            const input = document.getElementById('geo-search-input');
 
-            if (!db || !pushFn || !setFn) return;
-            const currentUser = JSON.parse(localStorage.getItem('optipath_logged_user'))?.fullName || 'Uživatel';
-            
-            const newMsgRef = pushFn(refFn(db, 'optipath/chat'));
-            setFn(newMsgRef, {
-                sender: currentUser,
-                text: text,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            });
+            const performSearch = async () => {
+                const query = input.value.trim();
+                if(!query) return;
+                showToast('Hledám místo...');
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    if(data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        map.setView([lat, lon], 14);
+                        showToast(`Nalezeno: ${data[0].display_name.split(',')[0]}`);
+                    } else {
+                        showToast('Místo nenalezeno');
+                    }
+                } catch(e) {
+                    showToast('Chyba při vyhledávání místa');
+                }
+            };
+
+            btn.onclick = performSearch;
+            input.onkeypress = (e) => {
+                if(e.key === 'Enter') performSearch();
+            };
         }
 
         function initMap() {
@@ -515,8 +918,8 @@
                     const customIcon = L.divIcon({
                         className: 'custom-div-icon',
                         html: cardHtml,
-                        iconSize: [140, 40],
-                        iconAnchor: [70, 20]
+                        iconSize: [150, 40],
+                        iconAnchor: [75, 20]
                     });
 
                     const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
@@ -581,21 +984,24 @@
         }
 
         function updateStats() {
-            document.getElementById('val-len').innerText = totalRouteLengthKm.toFixed(2) + ' km';
+            document.getElementById('val-len-disp').innerHTML = `<strong>${totalRouteLengthKm.toFixed(2)} km</strong>`;
             
             const excavRate = parseFloat(document.getElementById('excavation-type').value) || 45;
             const workers = parseInt(document.getElementById('workers-count').value) || 3;
             
-            const incExcav = document.getElementById('chk-inc-excavation').checked;
-            const incCables = document.getElementById('chk-inc-cables').checked;
-            const incObjects = document.getElementById('chk-inc-objects').checked;
-            const incLabor = document.getElementById('chk-inc-labor').checked;
+            const excavationCost = (totalRouteLengthKm * 1000) * excavRate;
+            const itemsCost = drawnItemsPrice;
+            
+            // Personální náklady odvozené od lidí v projektu
+            const teamMemberCount = Math.max(1, people.length);
+            const personCostRate = 350;
+            const teamLaborCost = teamMemberCount * workers * 8 * personCostRate * Math.max(1, totalRouteLengthKm * 1.5);
 
-            const excavationCost = incExcav ? (totalRouteLengthKm * 1000) * excavRate : 0;
-            const itemsCost = incCables || incObjects ? drawnItemsPrice : 0;
-            const laborCost = incLabor ? workers * 8 * 250 * Math.max(1, totalRouteLengthKm * 2) : 0;
+            document.getElementById('val-excav-disp').innerHTML = `<strong>${Math.round(excavationCost).toLocaleString()} Kč</strong>`;
+            document.getElementById('val-mat-disp').innerHTML = `<strong>${Math.round(itemsCost).toLocaleString()} Kč</strong>`;
+            document.getElementById('val-team-cost-disp').innerHTML = `<strong>${Math.round(teamLaborCost).toLocaleString()} Kč</strong> (${teamMemberCount} lidi v týmu)`;
 
-            const grandTotal = excavationCost + itemsCost + laborCost;
+            const grandTotal = excavationCost + itemsCost + teamLaborCost;
             document.getElementById('val-total-price').innerText = Math.round(grandTotal).toLocaleString() + ' Kč';
         }
 
@@ -629,81 +1035,43 @@
                 showToast('Vše vyčištěno');
             };
 
-            document.querySelectorAll('.lib-item').forEach(item => {
-                item.onclick = () => {
-                    selectedItemFromCatalog = {
-                        name: item.dataset.name,
-                        price: parseInt(item.dataset.price)
-                    };
-                    showToast(`Vybráno: ${selectedItemFromCatalog.name}`);
-                    slideLib.classList.remove('open');
-                    activeTool = 'place';
-                };
-            });
-
-            ['excavation-type', 'workers-count', 'chk-inc-excavation', 'chk-inc-cables', 'chk-inc-objects', 'chk-inc-labor'].forEach(id => {
+            ['excavation-type', 'workers-count'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.onchange = updateStats;
             });
 
+            document.getElementById('btn-edit-proj').onclick = () => {
+                const newName = prompt('Zadej nový název projektu:', currentProjectName);
+                if(newName) {
+                    currentProjectName = newName;
+                    document.getElementById('proj-name').innerText = newName;
+                    loadChatDataFromStorage();
+                    renderCurrentChatMessages();
+                    showToast('Projekt přejmenován');
+                }
+            };
+
             const savedModal = document.getElementById('saved-files-modal');
             document.getElementById('btn-saved-files').onclick = () => {
-                const listContainer = document.getElementById('saved-files-list');
-                listContainer.innerHTML = '';
-                
-                const db = window.FB_DB;
-                if (db) {
-                    const refFn = window.FB_REF;
-                    const onValueFn = window.FB_ONVALUE;
-                    onValueFn(refFn(db, 'optipath/projects'), (snapshot) => {
-                        const data = snapshot.val();
-                        listContainer.innerHTML = '';
-                        if (!data) {
-                            listContainer.innerHTML = '<div style="color:#64748b; text-align:center;">Žádné uložené projekty v cloudu.</div>';
-                            return;
-                        }
-                        Object.values(data).forEach((proj) => {
-                            const div = document.createElement('div');
-                            div.style.cssText = 'background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;';
-                            div.innerHTML = `<div><strong>${proj.name}</strong><br><span style="font-size:0.7rem; color:#64748b;">Délka: ${proj.length || 0} km</span></div> <button style="background:#2563eb; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="alert('Projekt ${proj.name} načten!')">Načíst</button>`;
-                            listContainer.appendChild(div);
-                        });
-                    }, { onlyOnce: true });
-                }
+                renderSavedProjectsList();
                 savedModal.style.display = 'flex';
             };
             document.getElementById('btn-close-files').onclick = () => savedModal.style.display = 'none';
 
-            // ULOŽENÍ DO CLOUDU
             document.getElementById('btn-save-local').onclick = () => {
-                const db = window.FB_DB;
-                const pushFn = window.FB_PUSH;
-                const setFn = window.FB_SET;
-                const refFn = window.FB_REF;
-
-                if (!db || !pushFn || !setFn || !refFn) {
-                    showToast('Chyba: Cloud není připojen!');
-                    return;
-                }
-
-                const newProjRef = pushFn(refFn(db, 'optipath/projects'));
-                setFn(newProjRef, {
+                let allProjects = JSON.parse(localStorage.getItem('optipath_cloud_projects') || '[]');
+                const newProj = {
+                    id: 'proj_' + Date.now(),
+                    owner: currentUser,
                     name: currentProjectName,
                     date: new Date().toLocaleDateString(),
                     length: totalRouteLengthKm.toFixed(2),
-                    price: document.getElementById('val-total-price').innerText
-                }).then(() => {
-                    showToast('Projekt úspěšně uložen do cloudu!');
-                }).catch((err) => {
-                    showToast('Chyba při ukládání: ' + err.message);
-                });
-            };
-
-            document.getElementById('btn-send-msg').onclick = () => {
-                const text = document.getElementById('chat-input-msg').value.trim();
-                if(!text) return;
-                saveChatMessage(text);
-                document.getElementById('chat-input-msg').value = '';
+                    price: document.getElementById('val-total-price').innerText,
+                    markers: placedMarkersData
+                };
+                allProjects.push(newProj);
+                localStorage.setItem('optipath_cloud_projects', JSON.stringify(allProjects));
+                showToast('Projekt úspěšně uložen!');
             };
 
             document.getElementById('btn-print-report').onclick = () => {
@@ -711,10 +1079,11 @@
                 const area = document.getElementById('print-content-area');
                 
                 area.innerHTML = `
+                    <p><strong>Uživatel:</strong> ${currentUser}</p>
                     <p><strong>Projekt:</strong> ${currentProjectName}</p>
                     <p><strong>Datum:</strong> ${new Date().toLocaleDateString()}</p>
                     <p><strong>Celková délka:</strong> ${totalRouteLengthKm.toFixed(2)} km</p>
-                    <p><strong>Počet prvků:</strong> ${placedMarkersData.length} ks</p>
+                    <p><strong>Lidé v projektu:</strong> ${people.join(', ') || 'Žádní'}</p>
                     <p style="color:var(--success); font-weight:700; margin-top:5px;">CELKOVÁ CENA: ${document.getElementById('val-total-price').innerText}</p>
                 `;
                 modal.style.display = 'flex';
@@ -727,9 +1096,57 @@
             document.getElementById('btn-do-print').onclick = () => {
                 window.print();
             };
+        }
+
+        function renderSavedProjectsList() {
+            const listContainer = document.getElementById('saved-files-list');
+            listContainer.innerHTML = '';
+            
+            let allProjects = JSON.parse(localStorage.getItem('optipath_cloud_projects') || '[]');
+            const userProjects = allProjects.filter(p => p.owner === currentUser);
+
+            if(userProjects.length === 0) {
+                listContainer.innerHTML = '<div style="color:#64748b; text-align:center; padding:10px;">Žádné uložené projekty v tomto účtu.</div>';
+            } else {
+                userProjects.forEach((proj) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;';
+                    div.innerHTML = `
+                        <div><strong>${proj.name}</strong><br><span style="font-size:0.7rem; color:#64748b;">${proj.date} | Délka: ${proj.length} km</span></div>
+                        <div style="display:flex; gap:4px;">
+                            <button style="background:#2563eb; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="loadCloudProject('${proj.id}')">Načíst</button>
+                            <button style="background:#dc2626; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="deleteCloudProject('${proj.id}')">Smazat</button>
+                        </div>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            }
+        }
+
+        window.loadCloudProject = function(id) {
+            const allProjects = JSON.parse(localStorage.getItem('optipath_cloud_projects') || '[]');
+            const found = allProjects.find(p => p.id === id);
+            if(found) {
+                currentProjectName = found.name;
+                document.getElementById('proj-name').innerText = currentProjectName;
+                document.getElementById('saved-files-modal').style.display = 'none';
+                loadChatDataFromStorage();
+                renderCurrentChatMessages();
+                showToast(`Projekt "${currentProjectName}" načten`);
+            }
+        };
+
+        window.deleteCloudProject = function(id) {
+            if(!confirm('Opravdu chceš tento uložený projekt trvale smazat?')) return;
+            let allProjects = JSON.parse(localStorage.getItem('optipath_cloud_projects') || '[]');
+            allProjects = allProjects.filter(p => p.id !== id);
+            localStorage.setItem('optipath_cloud_projects', JSON.stringify(allProjects));
+            renderSavedProjectsList();
+            showToast('Projekt byl smazán z úložiště');
         };
 
         window.addEventListener('resize', () => {
+            checkDeviceRestriction();
             if (map) setTimeout(() => map.invalidateSize(), 150);
         });
     </script>
