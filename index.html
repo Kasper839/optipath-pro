@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OptiPath Pro - Inženýrský systém GIS</title>
     
     <!-- Leaflet CSS -->
@@ -18,6 +18,7 @@
             --accent: #2563eb;
             --accent-hover: #1d4ed8;
             --success: #059669;
+            --danger: #dc2626;
             --bg-main: #f8fafc;
             --border: #e2e8f0;
             --text-main: #1e293b;
@@ -29,11 +30,13 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html, body, #app {
             width: 100%;
             height: 100vh;
+            height: 100dvh;
             background-color: var(--bg-main);
             color: var(--text-main);
             overflow: hidden;
@@ -49,55 +52,68 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 24px;
+            padding: 0 16px;
             border-bottom: 1px solid var(--border);
             z-index: 1000;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            gap: 12px;
         }
 
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
+            min-width: max-content;
         }
 
         .logo {
             font-weight: 700;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             color: var(--primary);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             letter-spacing: -0.025em;
         }
 
         .project-badge {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             background: #f1f5f9;
-            padding: 4px 10px;
+            padding: 4px 8px;
             border-radius: 6px;
             border: 1px solid var(--border);
             font-weight: 500;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .toolbar, .actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .toolbar::-webkit-scrollbar, .actions::-webkit-scrollbar {
+            display: none;
         }
 
         .toolbar button, .actions button {
             background-color: #ffffff;
             border: 1px solid var(--border);
             color: var(--text-main);
-            padding: 7px 14px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 500;
             transition: all 0.15s ease;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+            white-space: nowrap;
+            outline: none;
         }
 
         .toolbar button:hover, .actions button:hover {
@@ -109,7 +125,6 @@
             background-color: var(--accent);
             color: white;
             border-color: var(--accent);
-            box-shadow: 0 1px 3px 0 rgba(37, 99, 235, 0.3);
         }
 
         .actions button.primary {
@@ -122,79 +137,27 @@
             background-color: #047857;
         }
 
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: 1px solid var(--border);
+            font-size: 1.25rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
         /* Main Workspace */
         .main-content {
             display: flex;
             flex: 1;
             width: 100%;
             height: calc(100vh - 64px);
+            height: calc(100dvh - 64px);
             position: relative;
             overflow: hidden;
         }
 
-        /* Sidebar - Elements Library */
-        #sidebar {
-            width: 300px;
-            min-width: 300px;
-            background-color: #ffffff;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            z-index: 999;
-            height: 100%;
-        }
-
-        .sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            font-weight: 600;
-            color: var(--primary);
-            background: #ffffff;
-            font-size: 0.9rem;
-            letter-spacing: -0.01em;
-        }
-
-        .sidebar-body {
-            padding: 12px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .category-title {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            margin: 16px 0 8px 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .lib-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            padding: 10px 12px;
-            margin-bottom: 6px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.15s ease;
-        }
-
-        .lib-item:hover {
-            border-color: var(--accent);
-            background: #eff6ff;
-            transform: translateX(2px);
-        }
-
-        .lib-item span:last-child {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        /* Map Container */
         #map-container {
             flex: 1;
             width: 100%;
@@ -210,7 +173,7 @@
             left: 0;
         }
 
-        /* Right Panel - Statistics */
+        /* Right Panel */
         #info-panel {
             width: 320px;
             min-width: 320px;
@@ -220,28 +183,32 @@
             flex-direction: column;
             z-index: 999;
             height: 100%;
+            transition: transform 0.3s ease;
         }
 
         .info-header {
-            padding: 16px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             font-weight: 600;
             color: var(--primary);
             background: #ffffff;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .info-body {
             padding: 16px;
             overflow-y: auto;
             flex: 1;
-            font-size: 0.875rem;
+            font-size: 0.82rem;
         }
 
         .stat-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: var(--text-muted);
         }
 
@@ -253,15 +220,15 @@
             font-weight: 600;
             color: var(--success);
             border-top: 1px solid var(--border);
-            padding-top: 12px;
-            margin-top: 12px;
-            font-size: 0.95rem;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-size: 0.88rem;
         }
 
         .elements-list {
             list-style: none;
             margin-top: 8px;
-            max-height: 180px;
+            max-height: 130px;
             overflow-y: auto;
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -270,12 +237,13 @@
         }
 
         .elements-list li {
-            font-size: 0.8rem;
-            padding: 6px 8px;
+            font-size: 0.75rem;
+            padding: 5px 8px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
         }
 
         .elements-list li:last-child {
@@ -295,50 +263,52 @@
             align-items: center;
             z-index: 2000;
             backdrop-filter: blur(4px);
+            padding: 16px;
         }
 
         .modal-content {
             background: white;
-            width: 650px;
-            max-height: 85vh;
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
             border-radius: 12px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            animation: modalFadeIn 0.2s ease;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1); }
+        #library-modal .modal-content, #my-projects-modal .modal-content {
+            max-width: 800px;
+            height: 85vh;
         }
 
         .modal-header {
-            padding: 20px 24px;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
-            font-size: 1.05rem;
+            font-size: 1rem;
             color: var(--primary);
         }
 
         .modal-body {
-            padding: 24px;
+            padding: 20px;
             overflow-y: auto;
-            font-size: 0.9rem;
-            line-height: 1.6;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            flex: 1;
         }
 
         .modal-footer {
-            padding: 16px 24px;
+            padding: 14px 20px;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: flex-end;
-            gap: 12px;
+            gap: 10px;
             background: #f8fafc;
-            border-radius: 0 0 12px 12px;
         }
 
         .close-btn {
@@ -347,25 +317,208 @@
             font-size: 1.25rem;
             cursor: pointer;
             color: var(--text-muted);
-            transition: color 0.15s;
-        }
-
-        .close-btn:hover {
-            color: var(--text-main);
+            padding: 4px;
         }
 
         .report-section {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .report-section h4 {
             color: var(--primary);
-            margin-bottom: 8px;
-            font-size: 0.9rem;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             border-bottom: 2px solid var(--accent);
-            padding-bottom: 4px;
+            padding-bottom: 3px;
+        }
+
+        .lib-categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .lib-cat-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            cursor: pointer;
+            background: #ffffff;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+
+        .lib-cat-card:hover {
+            border-color: var(--accent);
+            background: #eff6ff;
+        }
+
+        .lib-cat-card h5 {
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .lib-cat-card p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .lib-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .lib-item-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            gap: 8px;
+            overflow: hidden;
+        }
+
+        .lib-item-option:hover {
+            background: #eff6ff;
+            border-color: var(--accent);
+        }
+
+        .lib-item-option .item-info-box {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lib-item-option .item-name {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lib-item-option .item-desc-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lib-item-option .item-price {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--success);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .back-cat-btn {
+            background: none;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-main);
+        }
+
+        .project-card-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #fff;
+            gap: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            #info-panel {
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(100%);
+                box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            }
+            #info-panel.mobile-open {
+                transform: translateX(0);
+            }
+            .mobile-menu-toggle {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar {
+                padding: 0 10px;
+                height: 56px;
+                min-height: 56px;
+            }
+            .main-content {
+                height: calc(100vh - 56px);
+                height: calc(100dvh - 56px);
+            }
+            .logo-area .project-badge {
+                display: none;
+            }
+            .toolbar {
+                display: none;
+            }
+            .mobile-bottom-toolbar {
+                display: flex;
+                position: absolute;
+                bottom: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: white;
+                padding: 6px;
+                border-radius: 30px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 998;
+                gap: 6px;
+                border: 1px solid var(--border);
+            }
+            .mobile-bottom-toolbar button {
+                padding: 8px 14px;
+                font-size: 0.78rem;
+                border-radius: 20px;
+                border: none;
+                background: #f1f5f9;
+                font-weight: 600;
+            }
+            .mobile-bottom-toolbar button.active {
+                background: var(--accent);
+                color: white;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-bottom-toolbar {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -374,125 +527,138 @@
         <!-- Top Navigation Bar -->
         <header class="top-bar">
             <div class="logo-area">
-                <span class="logo">⚡ OptiPath Pro</span>
-                <span class="project-badge">Projekt: <strong id="proj-name">Inženýrská trasa CZ</strong></span>
+                <span class="logo">⚡ OptiPath</span>
+                <span class="project-badge" id="proj-badge-top">Nový projekt</span>
             </div>
+            
             <div class="toolbar">
-                <button id="btn-main-branch" class="active" title="Kreslit hlavní optickou trasu">🔌 Hlavní větev</button>
-                <button id="btn-sub-branch" title="Kreslit vedlejší uličky a přípojky">🛣️ Uličky / Přípojky</button>
-                <button id="btn-place" title="Umístit prvek (budovu, šachtu)">📍 Vkládat prvek</button>
+                <button id="btn-main-branch" class="active" title="Vytvořit hlavní větev">🔌 Hlavní větev</button>
+                <button id="btn-sub-branch" title="Vytvořit vedlejší větev / odbočku">🛣️ Vedlejší větev</button>
+                <button id="btn-open-library" title="Otevřít knihovnu prvků">📚 Knihovna (50+)</button>
+                <button id="btn-my-projects" title="Seznam uložených projektů">📂 Projekty</button>
                 <button id="btn-clear" title="Smazat vše">🗑️ Vyčistit</button>
             </div>
+
             <div class="actions">
-                <button id="btn-auth" title="Přihlášení uživatele">👤 Přihlásit se</button>
-                <button id="btn-share" title="Sdílet projekt s přáteli">🔗 Sdílet</button>
-                <button id="btn-report" class="primary" title="Generovat kompletní technickou zprávu">📄 Odborná zpráva</button>
-                <button id="btn-export" title="Uložit projekt">💾 Uložit / Export</button>
+                <button id="btn-auth" title="Přihlášení uživatele">👤 Účet</button>
+                <button id="btn-share" title="Sdílet projekt">🔗 Sdílet</button>
+                <button id="btn-report" class="primary" title="Generovat technickou zprávu">📄 Zpráva</button>
+                <button id="btn-export" title="Uložit do souboru">💾 Export</button>
+                <button class="mobile-menu-toggle" id="btn-toggle-panel" title="Statistiky a nastavení">📊</button>
             </div>
         </header>
 
         <!-- Main Workspace -->
         <div class="main-content">
-            <!-- Left Panel - Elements Library -->
-            <aside id="sidebar">
-                <div class="sidebar-header">
-                    <span>📚 Knihovna prvků & Budov</span>
-                </div>
-                <div class="sidebar-body" id="library-container">
-                    <div class="category-title">Budovy & Objekty</div>
-                    <div class="lib-item" data-type="house" data-name="Rodinný dům / Přípojka" data-price="3500">
-                        <span>🏠 Rodinný dům (FTTH)</span><span>3 500 Kč</span>
-                    </div>
-                    <div class="lib-item" data-type="building" data-name="Bytový dům / Komerční obj." data-price="12000">
-                        <span>🏢 Bytový dům / Blok</span><span>12 000 Kč</span>
-                    </div>
-                    
-                    <div class="category-title">Šachty & Komory</div>
-                    <div class="lib-item" data-type="shaft" data-name="Kabelová šachta S1" data-price="1500">
-                        <span>🕳️ Kabelová šachta S1</span><span>1 500 Kč</span>
-                    </div>
-                    <div class="lib-item" data-type="chamber" data-name="Distribuční komora D2" data-price="4500">
-                        <span>📦 Distribuční komora D2</span><span>4 500 Kč</span>
-                    </div>
-
-                    <div class="category-title">Aktivní prvky</div>
-                    <div class="lib-item" data-type="splitter" data-name="Optický rozbočovač (Splitter)" data-price="2800">
-                        <span>⚙️ Optický rozbočovač</span><span>2 800 Kč</span>
-                    </div>
-                    <div class="lib-item" data-type="amplifier" data-name="Zesilovač / Uzol" data-price="6500">
-                        <span>⚡ Síťový uzol / Zesilovač</span><span>6 500 Kč</span>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Map Area -->
             <div id="map-container">
                 <div id="map"></div>
+                
+                <div class="mobile-bottom-toolbar">
+                    <button id="m-btn-main" class="active" onclick="setMobileMode('main-branch')">🔌 Hlavní</button>
+                    <button id="m-btn-sub" onclick="setMobileMode('sub-branch')">🛣️ Vedlejší</button>
+                    <button id="m-btn-lib" onclick="openLibraryModalMobile()">📚 Prvky</button>
+                </div>
             </div>
 
-            <!-- Right Panel - Statistics & Budget -->
+            <!-- Right Panel -->
             <aside id="info-panel">
-                <div class="info-header">📊 Parametry trasa & Rozpočet</div>
+                <div class="info-header">
+                    <span>📊 Trasa, Výkopy & Harmonogram</span>
+                    <button class="close-btn" id="panel-close" style="display:none;">&times;</button>
+                </div>
                 <div class="info-body">
-                    <div class="stat-row"><span>Hlavní větev:</span> <strong id="val-main-len">0.0 m</strong></div>
-                    <div class="stat-row"><span>Uličky / Přípojky:</span> <strong id="val-sub-len">0.0 m</strong></div>
+                    <div class="stat-row"><span>Hlavní větve:</span> <strong id="val-main-len">0.0 m</strong></div>
+                    <div class="stat-row"><span>Vedlejší větve:</span> <strong id="val-sub-len">0.0 m</strong></div>
                     <div class="stat-row"><span>Rezerva kabelu (10%):</span> <strong id="val-reserve">0.0 m</strong></div>
                     <div class="stat-row total"><span>Celková délka kabelů:</span> <strong id="val-total">0.0 m</strong></div>
                     
-                    <hr style="margin: 16px 0; border:none; border-top:1px solid var(--border);">
+                    <hr style="margin: 12px 0; border:none; border-top:1px solid var(--border);">
                     
                     <div class="stat-row"><span>Cena kabelů (45 Kč/m):</span> <strong id="val-price-cables">0 Kč</strong></div>
+                    <div class="stat-row"><span>Cena výkopů (350 Kč/m):</span> <strong id="val-price-excavation">0 Kč</strong></div>
                     <div class="stat-row"><span>Cena prvků a budov:</span> <strong id="val-price-items">0 Kč</strong></div>
                     <div class="stat-row total"><span>Celkové náklady:</span> <strong id="val-price-total">0 Kč</strong></div>
+
+                    <hr style="margin: 12px 0; border:none; border-top:1px solid var(--border);">
+
+                    <div class="stat-row"><span>Odhad pracnosti:</span> <strong id="val-days">0.0 dnů</strong></div>
+                    <div class="stat-row"><span>Potřebný tým:</span> <strong id="val-crew">0 lidí</strong></div>
+                    <div class="stat-row"><span>Doporučená technika:</span> <strong id="val-machinery" style="text-align: right; max-width: 160px; font-size: 0.78rem;">Žádná</strong></div>
                     
-                    <div style="margin-top: 18px; font-weight: 600; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Umístěné prvky:</div>
+                    <div style="margin-top: 12px; font-weight: 600; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Umístěné prvky:</div>
                     <ul class="elements-list" id="placed-list">
-                        <li style="color:#94a3b8; text-align:center; padding:12px;">Zatím nebyly vloženy žádné prvky</li>
+                        <li style="color:#94a3b8; text-align:center; padding:8px;">Zatím nebyly vloženy žádné prvky</li>
                     </ul>
                 </div>
             </aside>
         </div>
     </div>
 
-    <!-- Report Modal -->
-    <div class="modal-overlay" id="report-modal">
+    <!-- Modální okna -->
+    <div class="modal-overlay" id="library-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span>📄 Oficiální Inženýrská a Technická Zpráva</span>
-                <button class="close-btn" id="modal-close">&times;</button>
+                <span id="library-modal-title">📚 Velká knihovna prvků a zařízení (50 možností)</span>
+                <button class="close-btn" id="library-close">&times;</button>
             </div>
-            <div class="modal-body" id="report-content">
-                Načítání zprávy...
+            <div class="modal-body" id="library-modal-body"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="my-projects-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>📂 Moje uložené projekty</span>
+                <button class="close-btn" id="projects-close">&times;</button>
             </div>
-            <div class="modal-footer">
-                <button id="btn-print-report" class="primary">🖨️ Tisk / Uložit do PDF</button>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                    <input type="text" id="new-project-name" placeholder="Název nového projektu..." style="flex:1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 0.88rem;">
+                    <button id="btn-save-current-project" class="primary" style="padding: 10px 14px; border-radius: 6px; border: none; font-weight: 500; cursor: pointer; white-space: nowrap;">💾 Uložit</button>
+                </div>
+                <div id="projects-list-container"></div>
             </div>
         </div>
     </div>
 
-    <!-- Auth Modal -->
     <div class="modal-overlay" id="auth-modal">
-        <div class="modal-content" style="width: 400px; max-height: none;">
+        <div class="modal-content" style="max-width: 380px; height: auto;">
             <div class="modal-header">
                 <span>👤 Uživatelský účet OptiPath</span>
                 <button class="close-btn" id="auth-close">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 12px; font-size: 0.9rem; color: var(--text-muted);">Přihlaste se pro synchronizaci projektů v cloudu:</p>
-                <input type="text" id="username-input" placeholder="Zadejte uživatelské jméno" style="width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 0.9rem;">
-                <button id="btn-login-save" class="primary" style="width: 100%; padding: 10px; border-radius: 6px; font-weight: 500; cursor: pointer;">Přihlásit se</button>
+                <div id="auth-form-container">
+                    <p style="margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted);">Přihlaste se pro synchronizaci projektů:</p>
+                    <input type="text" id="username-input" placeholder="Zadejte uživatelské jméno" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 0.88rem;">
+                    <button id="btn-login-save" class="primary" style="width: 100%; padding: 10px; border-radius: 6px; font-weight: 500; cursor: pointer; border:none;">Přihlásit se</button>
+                </div>
+                <div id="auth-logged-container" style="display: none; text-align: center;">
+                    <p style="margin-bottom: 14px; font-size: 0.95rem;">Přihlášen jako: <strong id="logged-username-display">Host</strong></p>
+                    <button id="btn-logout" style="width: 100%; padding: 10px; border-radius: 6px; font-weight: 500; cursor: pointer; background: var(--danger); color: white; border: none;">🚪 Odhlásit se</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="report-modal">
+        <div class="modal-content" style="max-width: 600px; height: auto;">
+            <div class="modal-header">
+                <span>📄 Oficiální Inženýrská Zpráva</span>
+                <button class="close-btn" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="report-content">Načítání zprávy...</div>
+            <div class="modal-footer">
+                <button id="btn-print-report" class="primary">🖨️ Tisk / PDF</button>
             </div>
         </div>
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Leaflet Routing Machine JS -->
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
-    <!-- Leaflet Geocoder JS -->
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     
-    <!-- JavaScript logika -->
     <script>
         const map = L.map('map').setView([49.8175, 15.4730], 8);
 
@@ -503,75 +669,335 @@
 
         L.Control.geocoder({
             defaultMarkGeocoder: true,
-            placeholder: 'Hledat město, ulici, adresu...',
+            placeholder: 'Hledat město, ulici...',
             errorMessage: 'Město nebo adresa nebyla nalezena.'
         }).addTo(map);
 
         let mode = 'main-branch';
         let selectedTemplate = null;
 
-        let mainWaypoints = [];
-        let subWaypoints = [];
-        let mainRoutingControl = null;
-        let subRoutingControl = null;
+        let mainBranches = [];
+        let subBranches = [];
+        let activeBranch = null;
 
         let placedItems = [];
         const markersGroup = L.layerGroup().addTo(map);
 
         const CABLE_PRICE_PER_METER = 45;
+        const EXCAVATION_PRICE_PER_METER = 350;
         let currentUser = localStorage.getItem('optipath_user') || 'Host';
+        let currentProjectName = 'Nový projekt';
+        let userProjects = JSON.parse(localStorage.getItem('optipath_projects') || '[]') || [];
 
-        if (currentUser !== 'Host') {
-            const btnAuth = document.getElementById('btn-auth');
-            if (btnAuth) btnAuth.textContent = `👤 ${currentUser}`;
+        updateAuthUI();
+
+        const btnMainBranch = document.getElementById('btn-main-branch');
+        const btnSubBranch = document.getElementById('btn-sub-branch');
+        const btnOpenLibrary = document.getElementById('btn-open-library');
+        const mBtnMain = document.getElementById('m-btn-main');
+        const mBtnSub = document.getElementById('m-btn-sub');
+
+        function clearActiveToolbar() {
+            btnMainBranch.classList.remove('active');
+            btnSubBranch.classList.remove('active');
+            btnOpenLibrary.classList.remove('active');
+            if (mBtnMain) mBtnMain.classList.remove('active');
+            if (mBtnSub) mBtnSub.classList.remove('active');
         }
 
-        document.getElementById('btn-main-branch').addEventListener('click', (e) => {
-            mode = 'main-branch';
+        function setMode(newMode) {
+            activeBranch = null;
+            mode = newMode;
             selectedTemplate = null;
-            setActiveToolbar(e.target);
-        });
-
-        document.getElementById('btn-sub-branch').addEventListener('click', (e) => {
-            mode = 'sub-branch';
-            selectedTemplate = null;
-            setActiveToolbar(e.target);
-        });
-
-        document.getElementById('btn-place').addEventListener('click', (e) => {
-            mode = 'place';
-            setActiveToolbar(e.target);
-        });
-
-        function setActiveToolbar(btn) {
-            document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            clearActiveToolbar();
+            if (newMode === 'main-branch') {
+                btnMainBranch.classList.add('active');
+                if (mBtnMain) mBtnMain.classList.add('active');
+            } else if (newMode === 'sub-branch') {
+                btnSubBranch.classList.add('active');
+                if (mBtnSub) mBtnSub.classList.add('active');
+            }
         }
 
-        document.querySelectorAll('.lib-item').forEach(item => {
-            item.addEventListener('click', () => {
-                selectedTemplate = {
-                    type: item.dataset.type,
-                    name: item.dataset.name,
-                    price: parseInt(item.dataset.price)
-                };
-                mode = 'place';
-                document.getElementById('btn-place').classList.add('active');
-                document.querySelectorAll('.toolbar button').forEach(b => {
-                    if (b.id !== 'btn-place') b.classList.remove('active');
-                });
+        window.setMobileMode = function(newMode) {
+            setMode(newMode);
+        }
+
+        btnMainBranch.addEventListener('click', () => setMode('main-branch'));
+        btnSubBranch.addEventListener('click', () => setMode('sub-branch'));
+
+        const libraryCategories = {
+            buildings: {
+                title: "🏠 Budovy & Objekty (FTTH)",
+                desc: "Rodinné domy, bytové bloky, průmyslové areály",
+                items: [
+                    { type: "house", name: "Rodinný dům (standard)", desc: "Přípojka 1x domovní jednotka", price: 3500 },
+                    { type: "house", name: "Rodinný dům (velký / dvojdomek)", desc: "Přípojka pro 2 bytové jednotky", price: 4800 },
+                    { type: "building", name: "Bytový dům (malý - 4 B.J.)", desc: "Vnitřní rozvod + DTIO skříň", price: 9500 },
+                    { type: "building", name: "Bytový dům (střední - 12 B.J.)", desc: "Stupačkový rozvod optiky", price: 12000 },
+                    { type: "building", name: "Komerční budova / Kanceláře", desc: "Optická přípojka pro podnikání", price: 18500 },
+                    { type: "building", name: "Průmyslová hala / Sklad", desc: "Odolná průmyslová trasa", price: 29000 }
+                ]
+            },
+            shafts: {
+                title: "🕳️ Šachty & Komory",
+                desc: "Kabelové šachty, optické komory, poklopy",
+                items: [
+                    { type: "shaft", name: "Kabelová šachta S1 (malá)", desc: "pochůzná revizní šachta", price: 1500 },
+                    { type: "shaft", name: "Kabelová šachta S2 (střední)", desc: "Pro spojování tras", price: 2400 },
+                    { type: "shaft", name: "Kabelová šachta S3 (velká)", desc: "Hlavní uzlová šachta", price: 3900 },
+                    { type: "chamber", name: "Distribuční komora D1", desc: "Zemní plastová komora", price: 3200 },
+                    { type: "chamber", name: "Distribuční komora D2", desc: "Větší zemní komora pro splittery", price: 4500 }
+                ]
+            },
+            active: {
+                title: "⚙️ Aktivní prvky & Uzly",
+                desc: "Splittery, zesilovače, OLT, routery",
+                items: [
+                    { type: "splitter", name: "Optický rozbočovač 1:4", desc: "Pasivní splitter", price: 2200 },
+                    { type: "splitter", name: "Optický rozbočovač 1:8", desc: "Pasivní splitter", price: 2800 },
+                    { type: "splitter", name: "Optický rozbočovač 1:16", desc: "Pasivní splitter", price: 3600 },
+                    { type: "amplifier", name: "Síťový uzol / Zesilovač", desc: "Základní aktivní prvek", price: 6500 },
+                    { type: "amplifier", name: "OLT terminál (centrála)", desc: "Hlavní optický line terminál", price: 35000 }
+                ]
+            },
+            cables: {
+                title: "🔌 Kabely & Trasy (Typy)",
+                desc: "Optická vlákna, mikrokabely, zemní pásky",
+                items: [
+                    { type: "cable", name: "Optický kabel zemní 4V (G.652D)", desc: "Standardní trasa", price: 45 },
+                    { type: "cable", name: "Optický kabel zemní 24V", desc: "Páteřní trasa města", price: 85 },
+                    { type: "cable", name: "Závěsný samonosný kabel ADSS 4V", desc: "Na sloupy VN/NN", price: 60 }
+                ]
+            },
+            accessories: {
+                title: "🛠️ Příslušenství & Ochrana",
+                desc: "Spojky, chráničky, lišty, konzoly",
+                items: [
+                    { type: "accessory", name: "Optická svářecí spojka venkovní", desc: "IP68 vodotěsná", price: 1100 },
+                    { type: "accessory", name: "Domovní optická krabice (DTIO)", desc: "Ukončení v domě", price: 450 },
+                    { type: "accessory", name: "Chránička Kopoflex 40", desc: "Flexibilní ochrana kabelu", price: 35 }
+                ]
+            }
+        };
+
+        const libraryModal = document.getElementById('library-modal');
+        const libraryModalBody = document.getElementById('library-modal-body');
+        const libraryModalTitle = document.getElementById('library-modal-title');
+
+        btnOpenLibrary.addEventListener('click', () => {
+            renderLibraryCategories();
+            libraryModal.style.display = 'flex';
+        });
+
+        window.openLibraryModalMobile = function() {
+            renderLibraryCategories();
+            libraryModal.style.display = 'flex';
+        }
+
+        document.getElementById('library-close').addEventListener('click', () => {
+            libraryModal.style.display = 'none';
+        });
+
+        function renderLibraryCategories() {
+            libraryModalTitle.textContent = "📚 Velká knihovna prvků a zařízení";
+            let html = `<div class="lib-categories-grid">`;
+            for (const [key, cat] of Object.entries(libraryCategories)) {
+                html += `
+                    <div class="lib-cat-card" onclick="openLibraryCategory('${key}')">
+                        <h5>${cat.title}</h5>
+                        <p>${cat.desc}</p>
+                        <span style="display:inline-block; margin-top:8px; font-size:0.75rem; color:var(--accent); font-weight:600;">Zobrazit možnosti →</span>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+            libraryModalBody.innerHTML = html;
+        }
+
+        window.openLibraryCategory = function(catKey) {
+            const cat = libraryCategories[catKey];
+            libraryModalTitle.textContent = cat.title;
+            let html = `
+                <button class="back-cat-btn" onclick="renderLibraryCategories()">← Zpět na kategorie</button>
+                <div class="lib-items-grid">
+            `;
+            cat.items.forEach(item => {
+                html += `
+                    <div class="lib-item-option" onclick="selectLibraryItem('${item.type}', '${item.name}', ${item.price})">
+                        <div class="item-info-box">
+                            <span class="item-name">${item.name}</span>
+                            <span class="item-desc-sub">${item.desc}</span>
+                        </div>
+                        <span class="item-price">${item.price.toLocaleString()} Kč</span>
+                    </div>
+                `;
             });
+            html += `</div>`;
+            libraryModalBody.innerHTML = html;
+        }
+
+        window.selectLibraryItem = function(type, name, price) {
+            selectedTemplate = { type, name, price };
+            mode = 'place';
+            clearActiveToolbar();
+            btnOpenLibrary.classList.add('active');
+            btnOpenLibrary.textContent = `📍 Vkládám prvek`;
+            libraryModal.style.display = 'none';
+        }
+
+        const infoPanel = document.getElementById('info-panel');
+        const btnTogglePanel = document.getElementById('btn-toggle-panel');
+        const panelClose = document.getElementById('panel-close');
+
+        btnTogglePanel.addEventListener('click', () => {
+            infoPanel.classList.toggle('mobile-open');
+            panelClose.style.display = infoPanel.classList.contains('mobile-open') ? 'block' : 'none';
         });
+
+        panelClose.addEventListener('click', () => {
+            infoPanel.classList.remove('mobile-open');
+        });
+
+        const myProjectsModal = document.getElementById('my-projects-modal');
+        document.getElementById('btn-my-projects').addEventListener('click', () => {
+            renderProjectsList();
+            myProjectsModal.style.display = 'flex';
+        });
+        document.getElementById('projects-close').addEventListener('click', () => {
+            myProjectsModal.style.display = 'none';
+        });
+
+        document.getElementById('btn-save-current-project').addEventListener('click', () => {
+            const nameInput = document.getElementById('new-project-name');
+            const pName = nameInput.value.trim() || currentProjectName;
+            
+            const newProj = {
+                id: Date.now(),
+                name: pName,
+                main: mainBranches.map(b => b.waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }))),
+                sub: subBranches.map(b => b.waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }))),
+                items: placedItems,
+                date: new Date().toISOString().split('T')[0]
+            };
+            userProjects.push(newProj);
+            localStorage.setItem('optipath_projects', JSON.stringify(userProjects));
+            currentProjectName = pName;
+            document.getElementById('proj-badge-top').textContent = currentProjectName;
+            nameInput.value = '';
+            renderProjectsList();
+            alert('Projekt byl úspěšně uložen!');
+        });
+
+        function renderProjectsList() {
+            const container = document.getElementById('projects-list-container');
+            if (userProjects.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">Zatím nemáte uložené žádné projekty.</p>`;
+                return;
+            }
+            container.innerHTML = userProjects.map(p => `
+                <div class="project-card-item">
+                    <div style="min-width:0; flex:1;">
+                        <strong style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${p.name}</strong>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Uloženo: ${p.date} | Prvků: ${p.items.length}</div>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                        <button onclick="loadProject(${p.id})" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:#fff; cursor:pointer; font-weight:500; font-size:0.8rem;">Načíst</button>
+                        <button onclick="deleteProject(${p.id})" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:#fff; color:var(--danger); cursor:pointer; font-size:0.8rem;">Smazat</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.loadProject = function(id) {
+            const p = userProjects.find(item => item.id === id);
+            if (!p) return;
+            currentProjectName = p.name;
+            document.getElementById('proj-badge-top').textContent = currentProjectName;
+            
+            clearAllRoutes();
+
+            if (p.main) {
+                p.main.forEach(branchWps => {
+                    const wps = branchWps.map(w => L.latLng(w.lat, w.lng));
+                    if (wps.length >= 2) createBranch('main', wps);
+                });
+            }
+
+            if (p.sub) {
+                p.sub.forEach(branchWps => {
+                    const wps = branchWps.map(w => L.latLng(w.lat, w.lng));
+                    if (wps.length >= 2) createBranch('sub', wps);
+                });
+            }
+
+            placedItems = [...p.items];
+            renderAllMarkers();
+            updateStats();
+            myProjectsModal.style.display = 'none';
+        }
+
+        window.deleteProject = function(id) {
+            if (confirm('Opravdu chcete tento projekt smazat?')) {
+                userProjects = userProjects.filter(p => p.id !== id);
+                localStorage.setItem('optipath_projects', JSON.stringify(userProjects));
+                renderProjectsList();
+            }
+        }
+
+        const authModal = document.getElementById('auth-modal');
+        document.getElementById('btn-auth').addEventListener('click', () => { authModal.style.display = 'flex'; });
+        document.getElementById('auth-close').addEventListener('click', () => { authModal.style.display = 'none'; });
+
+        document.getElementById('btn-login-save').addEventListener('click', () => {
+            const name = document.getElementById('username-input').value.trim();
+            if (name) {
+                currentUser = name;
+                localStorage.setItem('optipath_user', currentUser);
+                updateAuthUI();
+                authModal.style.display = 'none';
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            currentUser = 'Host';
+            localStorage.removeItem('optipath_user');
+            updateAuthUI();
+            authModal.style.display = 'none';
+        });
+
+        function updateAuthUI() {
+            const btnAuth = document.getElementById('btn-auth');
+            const formCont = document.getElementById('auth-form-container');
+            const loggedCont = document.getElementById('auth-logged-container');
+            const loggedNameDisplay = document.getElementById('logged-username-display');
+
+            if (currentUser !== 'Host') {
+                btnAuth.textContent = `👤 ${currentUser}`;
+                formCont.style.display = 'none';
+                loggedCont.style.display = 'block';
+                loggedNameDisplay.textContent = currentUser;
+            } else {
+                btnAuth.textContent = `👤 Účet`;
+                formCont.style.display = 'block';
+                loggedCont.style.display = 'none';
+            }
+        }
 
         map.on('click', function(e) {
             const latLng = L.latLng(e.latlng.lat, e.latlng.lng);
 
-            if (mode === 'main-branch') {
-                mainWaypoints.push(latLng);
-                updateMainRouting();
-            } else if (mode === 'sub-branch') {
-                subWaypoints.push(latLng);
-                updateSubRouting();
+            if (mode === 'main-branch' || mode === 'sub-branch') {
+                const branchType = mode === 'main-branch' ? 'main' : 'sub';
+
+                if (!activeBranch || activeBranch.type !== branchType) {
+                    activeBranch = { type: branchType, waypoints: [latLng] };
+                    renderAllMarkers();
+                } else {
+                    activeBranch.waypoints.push(latLng);
+                    createBranch(activeBranch.type, activeBranch.waypoints);
+                    activeBranch = null;
+                }
             } else if (mode === 'place' && selectedTemplate) {
                 placedItems.push({
                     lat: latLng.lat,
@@ -580,92 +1006,77 @@
                     type: selectedTemplate.type,
                     price: selectedTemplate.price
                 });
-                renderPlacedItems();
+                renderAllMarkers();
                 updatePlacedListUI();
                 updateStats();
             }
         });
 
-        function updateMainRouting() {
-            if (mainWaypoints.length < 2) {
-                if (mainRoutingControl) {
-                    map.removeControl(mainRoutingControl);
-                    mainRoutingControl = null;
-                }
-                updateStats(0, null);
-                return;
-            }
-            
-            if (mainRoutingControl) {
-                map.removeControl(mainRoutingControl);
-            }
-
-            mainRoutingControl = L.Routing.control({
-                waypoints: mainWaypoints,
+        function createBranch(type, waypoints) {
+            const color = type === 'main' ? '#2563eb' : '#f97316';
+            const routingControl = L.Routing.control({
+                waypoints: waypoints,
                 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
-                lineOptions: {
-                    styles: [{ color: '#2563eb', weight: 6, opacity: 0.9 }]
-                },
-                show: false,
-                addWaypoints: false,
-                fitSelectedRoutes: false,
-                createMarker: (i, wp) => L.marker(wp.latLng, {
-                    icon: L.divIcon({
-                        className: 'custom-pin',
-                        html: `<div style="background:#2563eb;color:white;width:24px;height:24px;border-radius:50%;text-align:center;line-height:24px;font-weight:600;font-size:11px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);">M${i+1}</div>`,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    })
-                })
+                lineOptions: { styles: [{ color: color, weight: type === 'main' ? 6 : 4, opacity: 0.9 }] },
+                show: false, addWaypoints: false, fitSelectedRoutes: false,
+                createMarker: (i, wp) => {
+                    // Čistá tečka místo písmen A a B
+                    return L.marker(wp.latLng, {
+                        icon: L.divIcon({
+                            className: 'custom-dot-pin',
+                            html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>`,
+                            iconSize: [12, 12], iconAnchor: [6, 6]
+                        })
+                    });
+                }
             }).addTo(map);
 
-            mainRoutingControl.on('routesfound', function(e) {
-                const dist = e.routes[0].summary.totalDistance;
-                updateStats(dist, null);
-            });
-        }
+            const branchObj = {
+                id: Date.now() + Math.random(),
+                type: type,
+                waypoints: waypoints,
+                control: routingControl,
+                distance: 0
+            };
 
-        function updateSubRouting() {
-            if (subWaypoints.length < 2) {
-                if (subRoutingControl) {
-                    map.removeControl(subRoutingControl);
-                    subRoutingControl = null;
-                }
-                updateStats(null, 0);
-                return;
+            routingControl.on('routesfound', function(e) {
+                branchObj.distance = e.routes[0].summary.totalDistance;
+                updateStats();
+            });
+
+            if (type === 'main') {
+                mainBranches.push(branchObj);
+            } else {
+                subBranches.push(branchObj);
             }
 
-            if (subRoutingControl) {
-                map.removeControl(subRoutingControl);
-            }
-
-            subRoutingControl = L.Routing.control({
-                waypoints: subWaypoints,
-                router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
-                lineOptions: {
-                    styles: [{ color: '#f97316', weight: 4, opacity: 0.9 }]
-                },
-                show: false,
-                addWaypoints: false,
-                fitSelectedRoutes: false,
-                createMarker: (i, wp) => L.marker(wp.latLng, {
-                    icon: L.divIcon({
-                        className: 'custom-pin',
-                        html: `<div style="background:#f97316;color:white;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;font-weight:600;font-size:10px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);">U${i+1}</div>`,
-                        iconSize: [22, 22],
-                        iconAnchor: [11, 11]
-                    })
-                })
-            }).addTo(map);
-
-            subRoutingControl.on('routesfound', function(e) {
-                const dist = e.routes[0].summary.totalDistance;
-                updateStats(null, dist);
-            });
+            renderAllMarkers();
         }
 
-        function renderPlacedItems() {
+        function clearAllRoutes() {
+            mainBranches.forEach(b => { if (b.control) map.removeControl(b.control); });
+            subBranches.forEach(b => { if (b.control) map.removeControl(b.control); });
+            mainBranches = [];
+            subBranches = [];
+            activeBranch = null;
+        }
+
+        function renderAllMarkers() {
             markersGroup.clearLayers();
+
+            if (activeBranch && activeBranch.waypoints.length > 0) {
+                const color = activeBranch.type === 'main' ? '#2563eb' : '#f97316';
+                activeBranch.waypoints.forEach((wp) => {
+                    L.marker([wp.lat, wp.lng], {
+                        icon: L.divIcon({
+                            className: 'custom-start-dot',
+                            html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>`,
+                            iconSize: [12, 12], iconAnchor: [6, 6]
+                        })
+                    }).addTo(markersGroup);
+                });
+            }
+
             placedItems.forEach((item) => {
                 let iconEmoji = '📍', bgCol = '#64748b';
                 if (item.type === 'house') { iconEmoji = '🏠'; bgCol = '#059669'; }
@@ -674,98 +1085,112 @@
                 else if (item.type === 'chamber') { iconEmoji = '📦'; bgCol = '#f97316'; }
                 else if (item.type === 'splitter') { iconEmoji = '⚙️'; bgCol = '#db2777'; }
                 else if (item.type === 'amplifier') { iconEmoji = '⚡'; bgCol = '#d97706'; }
+                else if (item.type === 'cable') { iconEmoji = '🔌'; bgCol = '#0284c7'; }
+                else if (item.type === 'accessory') { iconEmoji = '🛠️'; bgCol = '#475569'; }
 
+                // Zajištění fixní velikosti a správného ořezu textu (žádné přetékání)
                 L.marker([item.lat, item.lng], {
                     icon: L.divIcon({
                         className: 'item-pin',
-                        html: `<div style="background:${bgCol};color:white;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 3px 6px rgba(0,0,0,0.2);white-space:nowrap;border:1.5px solid white;">${iconEmoji} ${item.name}</div>`,
-                        iconSize: [110, 30],
-                        iconAnchor: [55, 15]
+                        html: `<div style="background:${bgCol};color:white;padding:4px 8px;border-radius:14px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;box-shadow:0 3px 6px rgba(0,0,0,0.2);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1.5px solid white;"><span>${iconEmoji}</span><span style="overflow:hidden;text-overflow:ellipsis;">${item.name}</span></div>`,
+                        iconAnchor: [15, 15]
                     })
                 }).addTo(markersGroup);
             });
         }
 
-        let currentMainDist = 0;
-        let currentSubDist = 0;
+        function updateStats() {
+            let totalMainDist = 0;
+            mainBranches.forEach(b => { totalMainDist += b.distance; });
 
-        function updateStats(mDist = null, sDist = null) {
-            if (mDist !== null) currentMainDist = mDist;
-            if (sDist !== null) currentSubDist = sDist;
+            let totalSubDist = 0;
+            subBranches.forEach(b => { totalSubDist += b.distance; });
 
-            const totalDist = currentMainDist + currentSubDist;
+            const totalDist = totalMainDist + totalSubDist;
             const reserve = totalDist * 0.10;
             const totalLength = totalDist + reserve;
 
             const cableCost = totalLength * CABLE_PRICE_PER_METER;
+            const excavationCost = totalDist * EXCAVATION_PRICE_PER_METER;
             const itemsCost = placedItems.reduce((sum, item) => sum + item.price, 0);
-            const grandTotal = cableCost + itemsCost;
+            const grandTotal = cableCost + excavationCost + itemsCost;
 
-            document.getElementById('val-main-len').textContent = currentMainDist.toFixed(1) + ' m';
-            document.getElementById('val-sub-len').textContent = currentSubDist.toFixed(1) + ' m';
-            document.getElementById('val-reserve').textContent = reserve.toFixed(1) + ' m';
-            document.getElementById('val-total').textContent = totalLength.toFixed(1) + ' m';
+            let estimatedDays = 0;
+            let crewCount = 0;
+            let machineryText = "Ruční nářadí + hutnící deska";
+
+            if (totalDist > 0) {
+                // Realističtější výpočet pro lidi, tým a dny
+                if (totalDist < 150) {
+                    crewCount = 2;
+                    estimatedDays = Math.max(0.3, (totalDist / 45)).toFixed(1);
+                    machineryText = "Ruční nářadí";
+                } else if (totalDist < 600) {
+                    crewCount = 4;
+                    estimatedDays = (totalDist / 70).toFixed(1);
+                    machineryText = "Malý minibagr (1t)";
+                } else if (totalDist < 2500) {
+                    crewCount = 8;
+                    estimatedDays = (totalDist / 110).toFixed(1);
+                    machineryText = "Minibagr + řezání asfaltu";
+                } else {
+                    crewCount = 16;
+                    estimatedDays = (totalDist / 180).toFixed(1);
+                    machineryText = "Pásový bagr + mechanizace";
+                }
+            }
+
+            document.getElementById('val-main-len').textContent = (totalMainDist / 1000 >= 1) ? (totalMainDist / 1000).toFixed(2) + ' km' : totalMainDist.toFixed(1) + ' m';
+            document.getElementById('val-sub-len').textContent = (totalSubDist / 1000 >= 1) ? (totalSubDist / 1000).toFixed(2) + ' km' : totalSubDist.toFixed(1) + ' m';
+            document.getElementById('val-reserve').textContent = (reserve / 1000 >= 1) ? (reserve / 1000).toFixed(2) + ' km' : reserve.toFixed(1) + ' m';
+            document.getElementById('val-total').textContent = (totalLength / 1000 >= 1) ? (totalLength / 1000).toFixed(2) + ' km' : totalLength.toFixed(1) + ' m';
 
             document.getElementById('val-price-cables').textContent = Math.round(cableCost).toLocaleString() + ' Kč';
+            document.getElementById('val-price-excavation').textContent = Math.round(excavationCost).toLocaleString() + ' Kč';
             document.getElementById('val-price-items').textContent = Math.round(itemsCost).toLocaleString() + ' Kč';
             document.getElementById('val-price-total').textContent = Math.round(grandTotal).toLocaleString() + ' Kč';
+
+            document.getElementById('val-days').textContent = totalDist > 0 ? estimatedDays + ' dnů' : '0 dnů';
+            document.getElementById('val-crew').textContent = totalDist > 0 ? crewCount + ' lidí' : '0 lidí';
+            document.getElementById('val-machinery').textContent = machineryText;
         }
 
         function updatePlacedListUI() {
             const listEl = document.getElementById('placed-list');
             if (placedItems.length === 0) {
-                listEl.innerHTML = `<li style="color:#94a3b8; text-align:center; padding:12px;">Zatím nebyly vloženy žádné prvky</li>`;
+                listEl.innerHTML = `<li style="color:#94a3b8; text-align:center; padding:8px;">Zatím nebyly vloženy žádné prvky</li>`;
                 return;
             }
             listEl.innerHTML = placedItems.map((item, idx) => `
                 <li>
-                    <span>${idx+1}. ${item.name}</span>
-                    <span style="font-weight:600; color:#059669;">${item.price.toLocaleString()} Kč</span>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px;">${idx+1}. ${item.name}</span>
+                    <span style="font-weight:600; color:#059669; flex-shrink:0;">${item.price.toLocaleString()} Kč</span>
                 </li>
             `).join('');
         }
 
         document.getElementById('btn-clear').addEventListener('click', () => {
-            if (confirm('Opravdu chcete vymazat celou trasu a všechny vložené prvky?')) {
-                mainWaypoints = [];
-                subWaypoints = [];
-                if (mainRoutingControl) { map.removeControl(mainRoutingControl); mainRoutingControl = null; }
-                if (subRoutingControl) { map.removeControl(subRoutingControl); subRoutingControl = null; }
+            if (confirm('Opravdu chcete vymazat všechny větve a prvky?')) {
+                clearAllRoutes();
                 placedItems = [];
                 markersGroup.clearLayers();
-                currentMainDist = 0;
-                currentSubDist = 0;
-                updateStats(0, 0);
+                updateStats();
                 updatePlacedListUI();
-            }
-        });
-
-        document.getElementById('btn-auth').addEventListener('click', () => {
-            document.getElementById('auth-modal').style.display = 'flex';
-        });
-        document.getElementById('auth-close').addEventListener('click', () => {
-            document.getElementById('auth-modal').style.display = 'none';
-        });
-        document.getElementById('btn-login-save').addEventListener('click', () => {
-            const name = document.getElementById('username-input').value.trim();
-            if (name) {
-                currentUser = name;
-                localStorage.setItem('optipath_user', currentUser);
-                document.getElementById('btn-auth').textContent = `👤 ${currentUser}`;
-                document.getElementById('auth-modal').style.display = 'none';
+                btnOpenLibrary.textContent = '📚 Knihovna (50+)';
             }
         });
 
         document.getElementById('btn-share').addEventListener('click', () => {
             const projectData = {
                 user: currentUser,
-                main: mainWaypoints.map(wp => ({ lat: wp.lat, lng: wp.lng })),
-                sub: subWaypoints.map(wp => ({ lat: wp.lat, lng: wp.lng })),
+                name: currentProjectName,
+                main: mainBranches.map(b => b.waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }))),
+                sub: subBranches.map(b => b.waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }))),
                 items: placedItems
             };
             const encoded = btoa(encodeURIComponent(JSON.stringify(projectData)));
             const shareLink = window.location.origin + window.location.pathname + '#project=' + encoded;
-            prompt("Zkopírujte tento odkaz pro sdílení s přáteli:", shareLink);
+            prompt("Zkopírujte tento odkaz pro sdílení:", shareLink);
         });
 
         document.getElementById('btn-report').addEventListener('click', () => {
@@ -773,30 +1198,35 @@
             const modal = document.getElementById('report-modal');
             const reportContent = document.getElementById('report-content');
             
-            const totalDist = currentMainDist + currentSubDist;
+            let totalMainDist = 0; mainBranches.forEach(b => totalMainDist += b.distance);
+            let totalSubDist = 0; subBranches.forEach(b => totalSubDist += b.distance);
+            const totalDist = totalMainDist + totalSubDist;
             const totalLenWithReserve = totalDist * 1.10;
             const cableCost = totalLenWithReserve * CABLE_PRICE_PER_METER;
+            const excavationCost = totalDist * EXCAVATION_PRICE_PER_METER;
             const itemsCost = placedItems.reduce((sum, item) => sum + item.price, 0);
-            const totalCost = cableCost + itemsCost;
+            const totalCost = cableCost + excavationCost + itemsCost;
 
             reportContent.innerHTML = `
                 <div class="report-section">
                     <h4>1. Identifikace projektu</h4>
-                    <p><strong>Autor / Uživatel:</strong> ${currentUser}</p>
-                    <p><strong>Datum generování:</strong> ${new Date().toLocaleDateString('cs-CZ')}</p>
+                    <p><strong>Název:</strong> ${currentProjectName}</p>
+                    <p><strong>Zpracovatel:</strong> ${currentUser}</p>
+                    <p><strong>Datum:</strong> ${new Date().toLocaleDateString('cs-CZ')}</p>
                 </div>
                 <div class="report-section">
-                    <h4>2. Parametry optické sítě</h4>
-                    <p>Délka hlavní větve: <strong>${currentMainDist.toFixed(1)} m</strong></p>
-                    <p>Délka uliček a přípojek: <strong>${currentSubDist.toFixed(1)} m</strong></p>
-                    <p>Celková délka tras: <strong>${totalDist.toFixed(1)} m</strong></p>
-                    <p>Celková délka včetně provozní rezervy (10%): <strong>${totalLenWithReserve.toFixed(1)} m</strong></p>
+                    <h4>2. Parametry sítě</h4>
+                    <p>Hlavní větve (${mainBranches.length} ks): <strong>${(totalMainDist/1000).toFixed(2)} km</strong></p>
+                    <p>Vedlejší větve (${subBranches.length} ks): <strong>${(totalSubDist/1000).toFixed(2)} km</strong></p>
+                    <p>Celkem výkopů: <strong>${(totalDist/1000).toFixed(2)} km</strong></p>
+                    <p>Celkem kabelů (+10% rezerva): <strong>${(totalLenWithReserve/1000).toFixed(2)} km</strong></p>
                 </div>
                 <div class="report-section">
                     <h4>3. Finanční rozpočet</h4>
-                    <p>Náklady na optické kabely (${CABLE_PRICE_PER_METER} Kč/m): <strong>${Math.round(cableCost).toLocaleString()} Kč</strong></p>
-                    <p>Náklady na stavební a aktivní prvky (${placedItems.length} ks): <strong>${Math.round(itemsCost).toLocaleString()} Kč</strong></p>
-                    <p style="color:#059669; font-size:1.05rem; margin-top:10px;"><strong>Celkové předpokládané náklady: ${Math.round(totalCost).toLocaleString()} Kč</strong></p>
+                    <p>Kabely: <strong>${Math.round(cableCost).toLocaleString()} Kč</strong></p>
+                    <p>Výkopy a terén: <strong>${Math.round(excavationCost).toLocaleString()} Kč</strong></p>
+                    <p>Stavební prvky (${placedItems.length} ks): <strong>${Math.round(itemsCost).toLocaleString()} Kč</strong></p>
+                    <p style="color:#059669; font-size:1rem; margin-top:8px;"><strong>Celkové náklady: ${Math.round(totalCost).toLocaleString()} Kč</strong></p>
                 </div>
             `;
             modal.style.display = 'flex';
@@ -809,44 +1239,20 @@
         document.getElementById('btn-print-report').addEventListener('click', () => window.print());
 
         document.getElementById('btn-export').addEventListener('click', () => {
-            const data = { user: currentUser, mainWaypoints, subWaypoints, placedItems };
+            const data = {
+                user: currentUser,
+                name: currentProjectName,
+                main: mainBranches.map(b => b.waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }))),
+                sub: subBranches.map(b => b.waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }))),
+                placedItems
+            };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'optipath_projekt.json';
+            a.download = `${currentProjectName.replace(/\s+/g, '_')}.json`;
             a.click();
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.location.hash.includes('#project=')) {
-                try {
-                    const base64Data = window.location.hash.split('#project=')[1];
-                    const jsonString = decodeURIComponent(atob(base64Data));
-                    const project = JSON.parse(jsonString);
-
-                    if (project.main) {
-                        mainWaypoints = project.main.map(pt => L.latLng(pt.lat, pt.lng));
-                        updateMainRouting();
-                    }
-                    if (project.sub) {
-                        subWaypoints = project.sub.map(pt => L.latLng(pt.lat, pt.lng));
-                        updateSubRouting();
-                    }
-                    if (project.items) {
-                        placedItems = project.items;
-                        renderPlacedItems();
-                        updatePlacedListUI();
-                    }
-                    if (project.user) {
-                        currentUser = project.user;
-                        const btnAuth = document.getElementById('btn-auth');
-                        if (btnAuth) btnAuth.textContent = `👤 ${currentUser}`;
-                    }
-                } catch (e) {
-                    console.error('Chyba při parsování sdíleného projektu:', e);
-                }
-            }
+            URL.revokeObjectURL(url);
         });
     </script>
 </body>
