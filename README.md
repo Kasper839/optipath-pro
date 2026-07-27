@@ -13,4 +13,4 @@ Interaktivní inženýrský nástroj pro návrh, routování a optimalizaci opti
 - **Export dat:** Možnost generovat oficiální BOM protokol (PDF) nebo exportovat mapu jako obrázek.
 - **Vícejazyčné rozhraní:** Podpora pro češtinu, angličtinu a němčinu.
 
-👉 **Vyzkoušej živou ukázku:** kasper839.github.io/optipath-pro/
+👉 **Vyzkoušej živou ukázku:**  https://kasper839.github.io/optipath-pro/
