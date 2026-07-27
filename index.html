@@ -727,7 +727,7 @@
             document.getElementById('btn-do-print').onclick = () => {
                 window.print();
             };
-        });
+        };
 
         window.addEventListener('resize', () => {
             if (map) setTimeout(() => map.invalidateSize(), 150);
